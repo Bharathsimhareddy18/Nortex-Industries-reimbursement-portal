@@ -245,17 +245,17 @@ Not built yet: return.
 
 **`POST /upload_receipt`** (claim owner only, claim must be `awaiting_settlement`). The employee says what the receipt is for (`head`: Lodging, Meals, Business Entertainment, Local conveyance, Other); the amount is taken from the bill, not typed.
 1. The file must really be a PNG or JPEG (first bytes are checked, not the name) and at most `max_receipt_mb`.
-2. **Gemini** (`src/ai/gemini.py`) reads it into `ReceiptData` (merchant, bill no, date, total, paid by, description, items); the answer is validated by Pydantic.
+2. **OCR:** one multimodal model on Groq (`qwen/qwen3.8-27b`, `src/ai/groq.py`) sees only the image and returns the receipt as JSON (`ReceiptData`: merchant, bill no, date, total, paid by, description, items). The reply is validated by Pydantic. The claim is deliberately not shown to it, so the claim cannot bias what it reads.
 3. **Duplicate check:** same merchant + bill no + date + amount as a counted line on any claim. The new line is saved as `duplicate`, not counted.
-4. **Jev** (`src/ai/jev.py`) says what kind of business issued the bill (restaurant, cab, hotel, fuel, ...). `settings.head_merchant_types` says which kinds fit which head.
-5. Fits: line saved `ok`, `allowed` = the bill amount. Does not fit: line saved `excluded` with the reason, and the claimant plus everyone who approved the claim is notified. "Other" is never checked.
-A failed Gemini or Jev call (or a missing key) saves nothing and returns 502 / 503.
+4. **Claim check:** the model gets the claimed head (with its meaning from `settings.head_meanings`) and the JSON it just read, and returns `{merchant_type, matches, issue}`. It judges the kind of business and main purpose only; extras such as laundry on a hotel bill are not a mismatch. `Other` is never checked.
+5. Matches: line saved `ok`, `allowed` = the bill amount. Does not match: line saved `excluded` with the issue, and the claimant plus everyone who approved the claim is notified.
+The response is JSON with the status, `matched`, `issue`, the full `extracted` receipt and the model's `check`. A failed model call, an unreadable answer, or a missing key saves nothing and returns 502 / 503.
 
 **`POST /submit_settlement`** needs at least one counted employee-paid line. It creates the settlement Finance steps from the template (Ravi `verify`, then Kavitha `release_payment`), sets `settlement_review`, tells Ravi, and returns total, advance, payable and recoverable.
 
 **Finance** uses the same `/approve` (or `/reject`): the stage is chosen from the claim's status. Ravi approves: Kavitha is told the payout. Kavitha approves: status `paid`, `payment_date` = next 10th/25th, and the claimant is told the amount is dispatched (or how much is deducted from payroll if the claim is below the advance).
 `payable = receipts - advance` if positive; `recoverable = advance - receipts` if positive. Company-paid receipts are shown but never reimbursed.
 
-Setup: `GEMINI_API_KEY` and `JEV_API_KEY` in `.env`. Both calls are written to the providers' documented formats but have not been run against the real services.
+Setup: `GROQ_API_KEY` in `.env`. Tested against the real Groq service with the two sample bills: about 1 second per call, two calls per receipt.
 
 **Not built yet (the policy cuts):** hotel per-night cap, daily meal cap, laundry / mini-bar / other folio extras, attendee names for business entertainment, bills in someone else's name, late submission warning, a second round of business approvals on the claimed amount, editing or deleting an uploaded receipt.

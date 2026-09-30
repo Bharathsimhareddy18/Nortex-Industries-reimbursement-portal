@@ -6,53 +6,57 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from config.setting import settings
-from src.ai.gemini import Gemini
-from src.ai.jev import Jev
+from src.ai.groq import Groq
 from src.database.models import Approval, Category, Claim, Employee, Line
 from src.errors import AppError
 from src.notifications.notifications import Notifications
 from src.policy.policy import Policy
 from src.pydantic_models.claim import ApproverOut
-from src.pydantic_models.receipt import Head, ReceiptData, ReceiptOut, SubmitOut
+from src.pydantic_models.receipt import ClaimCheck, Head, ReceiptData, ReceiptOut, SubmitOut
 
 UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
 IMAGE_SIGNATURES = {b"\x89PNG\r\n\x1a\n": "image/png", b"\xff\xd8\xff": "image/jpeg"}  # the first bytes of a real PNG / JPEG file
 
 
 class Settlement:
-    def __init__(self, db: Session, reader: Gemini | None = None, classifier: Jev | None = None):
+    def __init__(self, db: Session, ai: Groq | None = None):
         self.db = db
-        self.reader = reader or Gemini()
-        self.classifier = classifier or Jev()
+        self.ai = ai or Groq()
         self.policy = Policy(db)
         self.notifications = Notifications(db)
 
     # ---------- receipts ----------
 
     def upload_receipt(self, user: Employee, claim_no: str, head: Head, filename: str, data: bytes) -> ReceiptOut:
-        """Take one receipt image: read it (Gemini), check it is not a repeat, check it fits what was claimed (Jev), save the result."""
+        """Take one receipt image: read it (OCR), check it is not a repeat, check it fits what was claimed, save the result."""
         claim = self._get_claim(user, claim_no, "awaiting_settlement")
         mime = self._image_type(data)
-        receipt = self.reader.read_receipt(data, mime)
+        receipt = self.ai.read_receipt(data, mime)
         path = self._save_file(claim_no, filename, data)
         key = self.policy.dedupe_key(receipt)
 
         earlier = self._earlier_line(key)
         if earlier is not None:
-            message = f"This bill was already uploaded (line {earlier.id} of claim {earlier.claim_no}), so it is not counted again."
-            line = self._save_line(claim, head, receipt, path, key, "duplicate", message, None, 0.0)
-            return self._result(line, receipt, None, False, message)
+            issue = f"This bill was already uploaded (line {earlier.id} of claim {earlier.claim_no})."
+            line = self._save_line(claim, head, receipt, path, key, "duplicate", issue, None)
+            return self._result(line, receipt, None, False, issue, f"{issue} It is not counted again.")
 
-        merchant_type, confidence = self.classifier.classify(self._describe(receipt))
-        if self.policy.head_matches(head, merchant_type):
-            line = self._save_line(claim, head, receipt, path, key, "ok", None, merchant_type, confidence)
-            return self._result(line, receipt, merchant_type, True, "Matches what you claimed. It will be counted.")
+        check = self._check(head, receipt)
+        if check.matches:
+            line = self._save_line(claim, head, receipt, path, key, "ok", None, check)
+            return self._result(line, receipt, check, True, None, "Matches what you claimed. It will be counted.")
 
-        message = f"This looks like a {merchant_type} bill, but you claimed it as {head}. It is flagged and not counted."
-        line = self._save_line(claim, head, receipt, path, key, "excluded", message, merchant_type, confidence)
-        self._report_mismatch(claim, line, receipt, message)
+        issue = check.issue or f"This looks like a {check.merchant_type} bill, not {head}."
+        line = self._save_line(claim, head, receipt, path, key, "excluded", issue, check)
+        self._report_mismatch(claim, receipt, issue)
         self.db.commit()
-        return self._result(line, receipt, merchant_type, False, message)
+        return self._result(line, receipt, check, False, issue, f"{issue} It is flagged and not counted.")
+
+    def _check(self, head: str, receipt: ReceiptData) -> ClaimCheck:
+        """Does the bill fit the claimed head? 'Other' is never questioned, so it skips the AI call."""
+        if head not in settings.head_meanings:
+            return ClaimCheck(merchant_type="not checked", matches=True)
+        return self.ai.check_claim(head, receipt)
 
     def _get_claim(self, user: Employee, claim_no: str, status: str) -> Claim:
         """The claim, if it exists, belongs to the user and is in the right stage."""
@@ -86,36 +90,30 @@ class Settlement:
         """A counted receipt with the same merchant, bill number, date and amount, on any claim."""
         return self.db.scalars(select(Line).where(Line.dedupe_key == key, Line.status == "ok")).first()
 
-    def _describe(self, receipt: ReceiptData) -> str:
-        """The text Jev reads: what Gemini found on the bill."""
-        return f"{receipt.merchant}. {receipt.description}. Items: {', '.join(receipt.items)}"
-
     def _save_line(self, claim: Claim, head: str, receipt: ReceiptData, path: str, key: str, status: str,
-                   reason: str | None, merchant_type: str | None, confidence: float) -> Line:
+                   reason: str | None, check: ClaimCheck | None) -> Line:
         """One row of the Settlement Form. Only 'ok' rows are allowed any money."""
         line = Line(
             claim_no=claim.claim_no, section=self.policy.section_of(head), head=head, line_date=receipt.bill_date,
             description=(receipt.description or receipt.merchant)[:300], paid_by=receipt.paid_by, amount=receipt.amount,
             allowed=receipt.amount if status == "ok" else 0, reason=reason, proof_ref=receipt.bill_no, file_path=path,
-            extracted={"receipt": receipt.model_dump(mode="json"), "jev_confidence": confidence},
-            merchant_category=merchant_type, dedupe_key=key, status=status,
+            extracted={"receipt": receipt.model_dump(mode="json"), "check": check.model_dump(mode="json") if check else None},
+            merchant_category=check.merchant_type[:30] if check else None, dedupe_key=key, status=status,
         )
         self.db.add(line)
         self.db.commit()
         return line
 
-    def _report_mismatch(self, claim: Claim, line: Line, receipt: ReceiptData, message: str) -> None:
+    def _report_mismatch(self, claim: Claim, receipt: ReceiptData, message: str) -> None:
         """Tell the claimant and everybody who approved this claim about a receipt that does not fit what was claimed."""
         approved = self.db.scalars(select(Approval.approver_code).where(Approval.claim_no == claim.claim_no, Approval.decision == "approved"))
         for code in {claim.employee_code, *approved}:
             self.notifications.send(code, claim.claim_no, f"Flagged receipt ({receipt.merchant}, INR {receipt.amount:,.2f}): {message}")
 
-    def _result(self, line: Line, receipt: ReceiptData, merchant_type: str | None, matched: bool, message: str) -> ReceiptOut:
-        """The upload answer."""
-        return ReceiptOut(
-            line_id=line.id, head=line.head, merchant=receipt.merchant, bill_no=receipt.bill_no, bill_date=receipt.bill_date,
-            amount=receipt.amount, merchant_type=merchant_type, matched=matched, status=line.status, message=message,
-        )
+    def _result(self, line: Line, receipt: ReceiptData, check: ClaimCheck | None, matched: bool, issue: str | None, message: str) -> ReceiptOut:
+        """The upload answer, including everything the model read."""
+        return ReceiptOut(line_id=line.id, head=line.head, status=line.status, matched=matched, issue=issue, message=message,
+                          extracted=receipt, check=check)
 
     # ---------- submitting ----------
 

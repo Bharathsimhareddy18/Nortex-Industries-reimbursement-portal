@@ -17,7 +17,7 @@ def upload_receipt(
     claim_no: str = Form(), head: Head = Form(), file: UploadFile = File(),
     user: Employee = Depends(current_user), db: Session = Depends(get_db),
 ):
-    """Upload one receipt (PNG or JPEG) and say what it is for. Gemini reads it, Jev checks it fits, and the answer says
+    """Upload one receipt (PNG or JPEG) and say what it is for. The AI reads it (OCR) and checks it fits, and the answer says
     whether it counts. Call it once per receipt."""
     data = file.file.read(settings.max_receipt_mb * 1024 * 1024 + 1)
     return Settlement(db).upload_receipt(user, claim_no, head, file.filename or "receipt", data)

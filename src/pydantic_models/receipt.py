@@ -1,4 +1,4 @@
-"""Receipts: what Gemini reads from an image, and what the settlement endpoints return."""
+"""Receipts: what the AI reads from an image, and what the settlement endpoints return."""
 from datetime import date
 from decimal import Decimal
 from typing import Literal
@@ -12,7 +12,7 @@ Head = Literal["Lodging", "Meals", "Business Entertainment", "Local conveyance",
 
 
 class ReceiptData(BaseModel):
-    """What Gemini must return for one receipt. Its answer is validated against this before we trust any number."""
+    """What the AI must return for one receipt. Its answer is validated against this before we trust any number."""
 
     merchant: str
     bill_no: str | None = None  # invoice / bill number, the proof reference
@@ -23,17 +23,23 @@ class ReceiptData(BaseModel):
     items: list[str] = []  # names of the items or services
 
 
+class ClaimCheck(BaseModel):
+    """The model's verdict on whether a bill fits what the employee claimed it was for."""
+
+    merchant_type: str  # short label for the kind of business, e.g. restaurant, taxi, hotel, petrol pump
+    matches: bool
+    issue: str | None = None  # one sentence on why it does not fit (None when it does)
+
+
 class ReceiptOut(BaseModel):
     line_id: int
     head: Head  # what the employee claimed it was for
-    merchant: str
-    bill_no: str | None
-    bill_date: date | None
-    amount: Decimal
-    merchant_type: str | None  # what Jev says the bill is from (None for a duplicate)
-    matched: bool  # does that fit the claimed head?
     status: Literal["ok", "duplicate", "excluded"]  # ok = counted; duplicate / excluded = kept out
+    matched: bool  # did the bill fit the claimed head?
+    issue: str | None  # why not, if it did not fit or was a repeat
     message: str
+    extracted: ReceiptData  # everything the model read from the image
+    check: ClaimCheck | None  # the model's verdict (None for a repeated bill, which is not checked)
 
 
 class SubmitIn(BaseModel):

@@ -62,21 +62,19 @@ class Settings(BaseSettings):
     ]
     tier2_cities: list[str] = []
 
-    # AI services. Put the keys in .env as GEMINI_API_KEY and JEV_API_KEY. Gemini reads receipt images; Jev says what kind of business issued the bill.
-    gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
-    jev_api_key: str = ""
-    jev_url: str = "https://api.typesafe.ai/v1/systemone"
-    jev_model: str = "jev-latest"
+    # AI: one multimodal model on Groq reads the receipt image (OCR) and checks it against what the employee claimed.
+    # The key goes in .env as GROQ_API_KEY.
+    groq_api_key: str = ""
+    groq_model: str = "qwen/qwen3.8-27b"
+    groq_url: str = "https://api.groq.com/openai/v1/chat/completions"
     max_receipt_mb: int = 5
 
-    # What a receipt may be for, and which kinds of business Jev may say it came from for that to count as a match.
-    # A head that is not listed here (Other) is never checked.
-    head_merchant_types: dict[str, list[str]] = {
-        "Lodging": ["hotel"],
-        "Meals": ["restaurant", "hotel"],
-        "Business Entertainment": ["restaurant", "hotel"],
-        "Local conveyance": ["cab"],
+    # What each claimed head means. The model reads this when it checks a receipt against the claim. 'Other' is never checked.
+    head_meanings: dict[str, str] = {
+        "Lodging": "a hotel room stay",
+        "Meals": "food and drink for the employee",
+        "Business Entertainment": "a meal or hospitality hosted for customers or partners",
+        "Local conveyance": "a taxi, cab or other local transport ride",
     }
 
     # Demo login: every employee uses this one password (dummy auth). Override with the DEMO_PASSWORD env var.

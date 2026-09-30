@@ -83,11 +83,6 @@ class Policy:
         """Which block of the Settlement Form a head belongs to."""
         return {"Lodging": "Lodging", "Local conveyance": "Transport"}.get(head, "Other")
 
-    def head_matches(self, head: str, merchant_type: str) -> bool:
-        """Does the kind of business Jev found fit what the employee claimed? A head with no rule (Other) always fits."""
-        expected = settings.head_merchant_types.get(head)
-        return expected is None or merchant_type in expected
-
     def dedupe_key(self, receipt: ReceiptData) -> str:
         """Finance reconciles bills by merchant, bill number, date and amount (policy 5.3); the same four mean the same bill."""
         return f"{receipt.merchant.strip().lower()}|{receipt.bill_no or ''}|{receipt.bill_date}|{receipt.amount:.2f}"
