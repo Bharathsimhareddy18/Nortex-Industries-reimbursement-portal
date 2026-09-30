@@ -2,10 +2,12 @@ from fastapi import FastAPI
 from fastapi import APIRouter
 import uvicorn
 
+from apis.dashboard_router import router as dashboard_router
 from apis.user_router import router as user_router
 
 app = FastAPI()
 app.include_router(user_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/")
