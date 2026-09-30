@@ -1,2 +1,6 @@
 fastapi[standard]
-pydantic 
+pydantic
+
+sqlalchemy
+pytesseract
+pillow
