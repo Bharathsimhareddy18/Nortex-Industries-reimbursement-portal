@@ -12,7 +12,7 @@ Fixed policy numbers live in `config/setting.py`. All logic lives in `src/`; `ap
 
 Other tables point to these two columns directly. There is no separate numeric `id` for employees or claims.
 
-## Tables (6)
+## Tables (7)
 
 ```sql
 CREATE TABLE employees (
@@ -78,6 +78,13 @@ CREATE TABLE approvals (                              -- who must decide each ph
     decision       VARCHAR(10) NOT NULL DEFAULT 'pending',   -- pending, approved, returned, rejected
     remarks        VARCHAR(500),
     decided_at     DATETIME
+);
+
+CREATE TABLE sessions (                               -- one row per login
+    token       VARCHAR(64) PRIMARY KEY,              -- random, unguessable; sent with every request
+    emp_code    VARCHAR(20) NOT NULL REFERENCES employees(emp_code),
+    created_at  DATETIME NOT NULL,
+    expires_at  DATETIME NOT NULL                     -- login time + session_hours (config/setting.py)
 );
 
 CREATE TABLE notifications (
@@ -153,11 +160,17 @@ If the claimant is the person assigned to a Finance step, the next Finance user 
 - **Owner only:** upload documents, edit lines, file the settlement.
 - **Admin only:** create users, create and edit categories.
 
+## Login and sessions
+
+`POST /auth/login` takes `{email, password}` (email is matched ignoring case and spaces; the password is the shared `demo_password` in `config/setting.py`). It saves a row in `sessions` and returns `{emp_code, session_token}`. Wrong email and wrong password give the same 401 message.
+Every other endpoint needs two headers: `emp-code` and `session-token`. The session must exist, belong to that `emp_code`, and not be expired. Anything else is a 401, including missing headers.
+No secret key is needed, because tokens are random values looked up in the table. Limits: old sessions are not cleaned up, there is no logout yet, and the token is stored as plain text.
+
 ## API (6 routers, 18 endpoints)
 
 | Router | Endpoint | Why it exists |
 |---|---|---|
-| auth | `POST /auth/login` | email + shared demo password gives a signed token |
+| auth | `POST /auth/login` | email + shared demo password gives `emp_code` + `session_token` |
 | | `GET /auth/me` | the UI learns the user's role |
 | users | `GET /users` | public list for the login picker |
 | | `POST /users` (admin) | add a person into the reporting chain |

@@ -68,5 +68,9 @@ class Settings(BaseSettings):
     finance_verify_code: str = "NX-3305"
     finance_payout_code: str = "NX-3300"
 
+    # Demo login: every employee uses this one password (dummy auth). Override with the DEMO_PASSWORD env var.
+    demo_password: str = "nortex123"
+    session_hours: int = 12  # how long a login stays valid
+
 
 settings = Settings()

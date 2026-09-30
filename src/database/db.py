@@ -20,6 +20,12 @@ def enforce_foreign_keys(connection, _record):
     connection.execute("PRAGMA foreign_keys=ON")
 
 
+def get_db():
+    """FastAPI dependency: one database session per request, always closed afterwards."""
+    with SessionLocal() as db:
+        yield db
+
+
 class Base(DeclarativeBase):
     """Parent of every table class in models.py."""
 

@@ -106,3 +106,14 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(String(500))
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class UserSession(Base):
+    """A login. The random token is what the browser sends with every request, together with the emp_code."""
+
+    __tablename__ = "sessions"
+
+    token: Mapped[str] = mapped_column(String(64), primary_key=True)
+    emp_code: Mapped[str] = mapped_column(ForeignKey("employees.emp_code"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
