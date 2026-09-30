@@ -1,21 +1,17 @@
 """Login and session checking. Dummy auth: one shared demo password, sessions kept in the sessions table."""
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from config.setting import settings
+from src.database.db import utc_now
 from src.database.models import Employee, UserSession
 
 
 class AuthError(Exception):
     """Wrong credentials, or a missing, wrong or expired session."""
-
-
-def _now() -> datetime:
-    """Current UTC time without a timezone, the same form SQLite stores."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Auth:
@@ -32,7 +28,7 @@ class Auth:
     def check_session(self, emp_code: str, token: str) -> Employee:
         """Return the employee behind a session, or raise. The token must exist, belong to this emp_code and not be expired."""
         session = self.db.get(UserSession, token)
-        if session is None or session.emp_code != emp_code or session.expires_at < _now():
+        if session is None or session.emp_code != emp_code or session.expires_at < utc_now():
             raise AuthError("Invalid or expired session, please log in again")
         return self.db.get(Employee, emp_code)
 
@@ -47,7 +43,7 @@ class Auth:
     def _new_session(self, emp_code: str) -> UserSession:
         """Save a session with a random, unguessable token that expires after settings.session_hours."""
         session = UserSession(
-            token=secrets.token_urlsafe(32), emp_code=emp_code, expires_at=_now() + timedelta(hours=settings.session_hours)
+            token=secrets.token_urlsafe(32), emp_code=emp_code, expires_at=utc_now() + timedelta(hours=settings.session_hours)
         )
         self.db.add(session)
         self.db.commit()

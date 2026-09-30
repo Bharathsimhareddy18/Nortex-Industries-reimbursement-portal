@@ -5,7 +5,8 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from src.database.models import Approval, Category, Claim, Employee, Notification
+from src.database.models import Approval, Category, Claim, Employee
+from src.notifications.notifications import Notifications
 from src.policy.policy import Policy
 from src.templates.templates import Templates
 
@@ -15,6 +16,7 @@ class Claims:
         self.db = db
         self.templates = Templates(db)
         self.policy = Policy(db)
+        self.notifications = Notifications(db)
 
     def create(self, employee: Employee, template_id: int, fields: dict) -> tuple[Claim, list[tuple[str, Employee]]]:
         """Raise a claim for `employee` and tell the approvers. Each step is one small method below; everything is saved in one go."""
@@ -28,9 +30,11 @@ class Claims:
 
         claim = self._save_claim(employee, template, clean, amount, level, waiting=bool(approvers or advance_step))
         self._save_approvals(claim, approvers, advance_step)
-        # Only the approvers hear about it now. Finance is told when the last approver approves; if there are no approvers, Finance goes first.
-        recipients = [person.emp_code for _role, person in approvers] or ([advance_step["emp_code"]] if advance_step else [])
-        self._notify(claim, employee, template, recipients)
+        # Approval is one after another, so only the first approver hears about it now; each next one is told when the one before approves.
+        # Finance is told after the last approver. With no approvers at all, Finance goes first.
+        first = approvers[0][1].emp_code if approvers else (advance_step["emp_code"] if advance_step else None)
+        if first:
+            self._notify(claim, employee, template, first)
         self.db.commit()
         return claim, approvers
 
@@ -71,9 +75,8 @@ class Claims:
                 action=advance_step["action"], approver_code=advance_step["emp_code"],
             ))
 
-    def _notify(self, claim: Claim, employee: Employee, template: Category, recipient_codes: list[str]) -> None:
-        """Put a message in each recipient's inbox."""
-        message = (f"{employee.name} ({employee.emp_code}) requests approval for INR {claim.estimated_amount:,.2f} "
-                   f"({template.name}, level L{claim.level}). Claim {claim.claim_no}")
-        for code in recipient_codes:
-            self.db.add(Notification(recipient_code=code, claim_no=claim.claim_no, message=message))
+    def _notify(self, claim: Claim, employee: Employee, template: Category, recipient_code: str) -> None:
+        """Tell one person a claim is waiting for them."""
+        self.notifications.send(recipient_code, claim.claim_no,
+                                f"{employee.name} ({employee.emp_code}) requests approval for INR {claim.estimated_amount:,.2f} "
+                                f"({template.name}, level L{claim.level}).")

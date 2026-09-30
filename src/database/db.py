@@ -1,5 +1,6 @@
 """Database connection. SQLite only: one file, nortex.db, in the project root."""
 import warnings
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import create_engine, event
@@ -18,6 +19,11 @@ SessionLocal = sessionmaker(bind=engine)
 def enforce_foreign_keys(connection, _record):
     """SQLite ignores foreign keys unless told otherwise; switch them on so a bad emp_code or claim_no is rejected."""
     connection.execute("PRAGMA foreign_keys=ON")
+
+
+def utc_now() -> datetime:
+    """Current UTC time without a timezone, the form SQLite stores. Use this for every timestamp we save or compare."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def get_db():

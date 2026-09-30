@@ -44,7 +44,7 @@ class Claim(Base):
     claim_no: Mapped[str] = mapped_column(String(20), primary_key=True)  # TRQ-2026-0001
     employee_code: Mapped[str] = mapped_column(ForeignKey("employees.emp_code"))
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
-    # pending_approval, awaiting_settlement, settlement_review, paid, returned, rejected
+    # pending_approval, awaiting_advance, awaiting_settlement, settlement_review, paid, returned, rejected
     status: Mapped[str] = mapped_column(String(25))
     level: Mapped[int]  # L1..L4 of the current phase
     details: Mapped[dict] = mapped_column(JSON)  # the request form answers

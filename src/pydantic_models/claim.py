@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from src.pydantic_models.base import RowModel
 
-ClaimStatus = Literal["pending_approval", "awaiting_settlement", "settlement_review", "paid", "returned", "rejected"]
+ClaimStatus = Literal["pending_approval", "awaiting_advance", "awaiting_settlement", "settlement_review", "paid", "returned", "rejected"]
 LineStatus = Literal["ok", "disallowed", "duplicate", "excluded"]
 PaidBy = Literal["Employee", "Company"]  # exactly these two words, the settlement form sums on them
 

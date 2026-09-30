@@ -199,6 +199,9 @@ No secret key is needed, because tokens are random values looked up in the table
 | `GET /get_templates` | `[{template_id, template_name}]` for the three templates |
 | `GET /get_template_required_fields?template_id=&template_name=` | the fields that template asks for (id and name must both match) |
 | `POST /create_claim` | `{template_id, fields}`; the claimant is the logged-in user |
+| `POST /approve` | `{claim_no}`; the logged-in user approves their own pending step, in order |
+| `POST /reject` | `{claim_no, remarks}`; same rules as approve, but the claim is closed as `rejected` and the claimant sees the reason |
+| `GET /get_all_notifications` | the logged-in user's inbox, newest first |
 
 All except login need the `emp-code` and `session-token` headers.
 
@@ -211,7 +214,7 @@ All except login need the `emp-code` and `session-token` headers.
 | 3 Hotel stay | `hotel_name`, `city`, `city_tier` (1/2/3), `number_of_days` |
 
 **`POST /create_claim`** (`src/claims/claims.py`, using `src/policy/policy.py` and `src/templates/templates.py`):
-1. validate the fields; 2. work out the amount (Travelling: `estimated_trip_cost`; Food: `amount`; Hotel stay has no cost field, so **nights x the lodging limit of the tier**); 3. check the advance is at most 60% of it; 4. `Policy.get_level` gives L1 to L4 (any international trip is L4); 5. `Policy.get_approvers` lists the people for that level, dropping missing roles, repeats, and the claimant; 6. save the claim (`TRQ-year-number`), one `approvals` row per approver, and one notification per approver (all notified at once).
+1. validate the fields; 2. work out the amount (Travelling: `estimated_trip_cost`; Food: `amount`; Hotel stay has no cost field, so **nights x the lodging limit of the tier**); 3. check the advance is at most 60% of it; 4. `Policy.get_level` gives L1 to L4 (any international trip is L4); 5. `Policy.get_approvers` lists the people for that level, dropping missing roles, repeats, and the claimant; 6. save the claim (`TRQ-year-number`), one `approvals` row per approver, and tell only the first approver.
 With nobody to approve, the claim goes straight to `awaiting_settlement`.
 Not built yet: the Finance advance-release step (it is added when the last approver approves), and the approve / return / reject endpoint.
 
@@ -226,3 +229,12 @@ Decided: Ravi releases advances and verifies claims, Kavitha releases payouts (s
 ## Not planned yet
 
 Real auth (per-user passwords, token revocation), category versions, migrations (a reset script rebuilds the tables), `.xlsx` export of the form, partial-line approval.
+
+## Approving (`POST /approve`)
+
+`src/approvals/approvals.py`. Allowed only if: the caller is not the claimant, the claim is `pending_approval` or `awaiting_advance`, the caller has a pending request-stage step, and every earlier step is already approved (else 403 / 409).
+On approval: the step is marked `approved`, the claimant is told, then
+- another step follows: that person is told. If it is Finance's `release_advance` step, the claim becomes `awaiting_advance` and Ravi is asked to release the advance;
+- nothing follows: the claim becomes `awaiting_settlement` and the claimant is told to upload bills. If the last step was the advance release, `advance_amount` is set from `advance_requested`.
+`POST /reject` follows the same checks, but marks the step `rejected` (with the reason, which is required), sets the claim to `rejected` and tells the claimant. Steps after it stay `pending`, which is harmless because a rejected claim accepts no more decisions. Rejecting at Finance's advance step also rejects the whole claim.
+Not built yet: return.
