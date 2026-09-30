@@ -133,12 +133,12 @@ This relies on: `department` and `reporting_manager_code` filled in for everyone
 
 ## Finance steps
 
-Three Finance steps exist. Each is a row in `approvals` with its own `action`, and the person comes from `config/setting.py`:
+Three Finance steps exist. Each is a row in `approvals` with its own `action`. They never change, so they are written into each template's `config.finance_steps` (in `src/seeder/seeder.py`), together with the person: Ravi (NX-3305) for the advance and verification, Kavitha (NX-3300) for the payout. Only Travelling has the advance step; it has `only_if_positive: advance_requested`, so it exists only when the claim asks for an advance (no advance, no Finance step).
 
 | Step | `action` | Person | Phase | Created when | What happens when it is done |
 |---|---|---|---|---|---|
-| Advance release | `release_advance` | Ravi (NX-3305) | request | only if an advance was requested | `advance_amount` is set; claim becomes `awaiting_settlement` |
-| Verification | `verify` | Ravi (NX-3305) | settlement | always | the claim moves to payout |
+| Advance release | `release_advance` | Ravi (NX-3305) | request | at `create_claim`, as the last row after the approvers, only if an advance was requested. Ravi is **not** notified then, but when the last approver approves | `advance_amount` is set; claim becomes `awaiting_settlement` |
+| Verification | `verify` | Ravi (NX-3305) | settlement | always (created when the settlement is filed; not built yet) | the claim moves to payout |
 | Payout release | `release_payment` | Kavitha (NX-3300) | settlement | always | `payment_date` set to the next 10th/25th; claim becomes `paid` |
 
 If the claimant is the person assigned to a Finance step, the next Finance user takes it (nobody acts on their own claim).
@@ -188,6 +188,32 @@ No secret key is needed, because tokens are random values looked up in the table
 | | `POST /approvals/{id}` | approve / return / reject |
 | notifications | `GET /notifications` | my inbox |
 | | `POST /notifications/read` | clear unread |
+
+## Built so far
+
+| Endpoint | What it does |
+|---|---|
+| `POST /auth/login` | email + demo password gives `emp_code` + `session_token` |
+| `GET /auth/me` | full row of the logged-in person |
+| `GET /dashboard/me` | `emp_code`, `email`, `designation`, `department`, `role` |
+| `GET /get_templates` | `[{template_id, template_name}]` for the three templates |
+| `GET /get_template_required_fields?template_id=&template_name=` | the fields that template asks for (id and name must both match) |
+| `POST /create_claim` | `{template_id, fields}`; the claimant is the logged-in user |
+
+All except login need the `emp-code` and `session-token` headers.
+
+**Templates** are three rows in `categories` (ids 1 to 3), seeded by `src/seeder/seeder.py`; their field list is in `config.fields`. Fields are checked with a Pydantic model built from that list (required fields, types, limits, unknown fields rejected).
+
+| Template | Fields |
+|---|---|
+| 1 Travelling | `destination`, `mode_of_transport` (Air/Train/Bus/Car), `number_of_days`, `departure_time`, `estimated_trip_cost`, optional `advance_requested` (default 0), optional `is_international` (default false) |
+| 2 Food | `amount`, `city`, `city_tier` (1/2/3) |
+| 3 Hotel stay | `hotel_name`, `city`, `city_tier` (1/2/3), `number_of_days` |
+
+**`POST /create_claim`** (`src/claims/claims.py`, using `src/policy/policy.py` and `src/templates/templates.py`):
+1. validate the fields; 2. work out the amount (Travelling: `estimated_trip_cost`; Food: `amount`; Hotel stay has no cost field, so **nights x the lodging limit of the tier**); 3. check the advance is at most 60% of it; 4. `Policy.get_level` gives L1 to L4 (any international trip is L4); 5. `Policy.get_approvers` lists the people for that level, dropping missing roles, repeats, and the claimant; 6. save the claim (`TRQ-year-number`), one `approvals` row per approver, and one notification per approver (all notified at once).
+With nobody to approve, the claim goes straight to `awaiting_settlement`.
+Not built yet: the Finance advance-release step (it is added when the last approver approves), and the approve / return / reject endpoint.
 
 ## Decisions still open
 

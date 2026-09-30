@@ -62,12 +62,6 @@ class Settings(BaseSettings):
     ]
     tier2_cities: list[str] = []
 
-    # Who performs each Finance step (employee codes). Ravi Menon, Manager - Finance Shared Services, releases advances and
-    # verifies claims; Kavitha Balan, Controller, releases the final payout. Verifier and releaser are deliberately different people.
-    finance_advance_code: str = "NX-3305"
-    finance_verify_code: str = "NX-3305"
-    finance_payout_code: str = "NX-3300"
-
     # Demo login: every employee uses this one password (dummy auth). Override with the DEMO_PASSWORD env var.
     demo_password: str = "nortex123"
     session_hours: int = 12  # how long a login stays valid

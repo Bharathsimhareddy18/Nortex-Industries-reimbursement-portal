@@ -3,6 +3,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
+from pydantic import BaseModel
+
 from src.pydantic_models.base import RowModel
 
 ClaimStatus = Literal["pending_approval", "awaiting_settlement", "settlement_review", "paid", "returned", "rejected"]
@@ -38,3 +40,22 @@ class ClaimOut(RowModel):
     advance_amount: Decimal
     payment_date: date | None
     created_at: datetime
+
+
+class CreateClaimIn(BaseModel):
+    template_id: int
+    fields: dict  # the values for that template's required fields (see /get_template_required_fields)
+
+
+class ApproverOut(BaseModel):
+    emp_code: str
+    name: str
+    role: str  # which approval slot this person fills, e.g. Reporting Manager
+
+
+class CreateClaimOut(BaseModel):
+    claim_no: str
+    status: ClaimStatus
+    level: int  # 1..4 (L1..L4)
+    estimated_amount: Decimal
+    approvers: list[ApproverOut]  # in approval order; empty if nobody above the claimant needs to approve
