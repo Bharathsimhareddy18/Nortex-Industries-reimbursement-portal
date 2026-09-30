@@ -62,6 +62,23 @@ class Settings(BaseSettings):
     ]
     tier2_cities: list[str] = []
 
+    # AI services. Put the keys in .env as GEMINI_API_KEY and JEV_API_KEY. Gemini reads receipt images; Jev says what kind of business issued the bill.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+    jev_api_key: str = ""
+    jev_url: str = "https://api.typesafe.ai/v1/systemone"
+    jev_model: str = "jev-latest"
+    max_receipt_mb: int = 5
+
+    # What a receipt may be for, and which kinds of business Jev may say it came from for that to count as a match.
+    # A head that is not listed here (Other) is never checked.
+    head_merchant_types: dict[str, list[str]] = {
+        "Lodging": ["hotel"],
+        "Meals": ["restaurant", "hotel"],
+        "Business Entertainment": ["restaurant", "hotel"],
+        "Local conveyance": ["cab"],
+    }
+
     # Demo login: every employee uses this one password (dummy auth). Override with the DEMO_PASSWORD env var.
     demo_password: str = "nortex123"
     session_hours: int = 12  # how long a login stays valid

@@ -1,12 +1,14 @@
 """Company policy as code: which level a claim is, and who must approve it. Uses the numbers in config/setting.py."""
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from config.setting import settings
-from src.database.models import Employee
+from src.database.models import Employee, Line
 from src.errors import AppError
+from src.pydantic_models.receipt import ReceiptData
 
 
 class Policy:
@@ -74,3 +76,39 @@ class Policy:
         cap = estimated * settings.advance_max_pct / 100
         if advance > cap:
             raise AppError(422, f"Advance {advance:,.2f} is above {settings.advance_max_pct}% of the estimate ({cap:,.2f})")
+
+    # ---------- settlement ----------
+
+    def section_of(self, head: str) -> str:
+        """Which block of the Settlement Form a head belongs to."""
+        return {"Lodging": "Lodging", "Local conveyance": "Transport"}.get(head, "Other")
+
+    def head_matches(self, head: str, merchant_type: str) -> bool:
+        """Does the kind of business Jev found fit what the employee claimed? A head with no rule (Other) always fits."""
+        expected = settings.head_merchant_types.get(head)
+        return expected is None or merchant_type in expected
+
+    def dedupe_key(self, receipt: ReceiptData) -> str:
+        """Finance reconciles bills by merchant, bill number, date and amount (policy 5.3); the same four mean the same bill."""
+        return f"{receipt.merchant.strip().lower()}|{receipt.bill_no or ''}|{receipt.bill_date}|{receipt.amount:.2f}"
+
+    def totals(self, claim_no: str, advance: Decimal) -> dict:
+        """The settlement summary. Only receipts the employee paid for, and that count, are reimbursed; company-paid ones are memo only."""
+        lines = self.db.scalars(select(Line).where(Line.claim_no == claim_no, Line.status.in_(("ok", "disallowed")))).all()
+        claimed = sum((l.amount for l in lines if l.paid_by == "Employee"), Decimal("0"))
+        net = sum((l.allowed for l in lines if l.paid_by == "Employee"), Decimal("0"))
+        return {
+            "paid_by_employee": claimed, "paid_by_company": sum((l.amount for l in lines if l.paid_by == "Company"), Decimal("0")),
+            "net_reimbursable": net, "advance": advance,
+            "payable": max(net - advance, Decimal("0")),  # the company pays the employee
+            "recoverable": max(advance - net, Decimal("0")),  # the claim is below the advance: the difference is deducted from payroll (policy 1.3)
+        }
+
+    def next_payment_date(self, today: date) -> date:
+        """Finance pays on fixed days of the month (policy 5.4): the next one on or after today."""
+        days = sorted(settings.payment_run_days)
+        for day in days:
+            if day >= today.day:
+                return today.replace(day=day)
+        year, month = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
+        return date(year, month, days[0])

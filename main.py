@@ -8,6 +8,7 @@ from apis.approval_router import router as approval_router
 from apis.claim_router import router as claim_router
 from apis.dashboard_router import router as dashboard_router
 from apis.notification_router import router as notification_router
+from apis.settlement_router import router as settlement_router
 from apis.templates_router import router as templates_router
 from apis.user_router import router as user_router
 from src.errors import AppError
@@ -19,6 +20,7 @@ app.include_router(templates_router)
 app.include_router(claim_router)
 app.include_router(approval_router)
 app.include_router(notification_router)
+app.include_router(settlement_router)
 
 
 @app.exception_handler(AppError)
