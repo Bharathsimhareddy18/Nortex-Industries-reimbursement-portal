@@ -83,6 +83,14 @@ class Policy:
         """Which block of the Settlement Form a head belongs to."""
         return {"Lodging": "Lodging", "Local conveyance": "Transport"}.get(head, "Other")
 
+    def receipt_message(self, status: str, reason: str | None) -> str:
+        """The sentence shown for a receipt. Used when it is uploaded and again when the claim is read, so the two always agree."""
+        if status == "ok":
+            return "Matches what you claimed. It will be counted."
+        if status == "duplicate":
+            return f"{reason} It is not counted again."
+        return f"{reason} It is flagged and not counted."
+
     def dedupe_key(self, receipt: ReceiptData) -> str:
         """Finance reconciles bills by merchant, bill number, date and amount (policy 5.3); the same four mean the same bill."""
         return f"{receipt.merchant.strip().lower()}|{receipt.bill_no or ''}|{receipt.bill_date}|{receipt.amount:.2f}"

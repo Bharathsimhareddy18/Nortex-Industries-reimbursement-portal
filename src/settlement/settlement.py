@@ -39,18 +39,18 @@ class Settlement:
         if earlier is not None:
             issue = f"This bill was already uploaded (line {earlier.id} of claim {earlier.claim_no})."
             line = self._save_line(claim, head, receipt, path, key, "duplicate", issue, None)
-            return self._result(line, receipt, None, False, issue, f"{issue} It is not counted again.")
+            return self._result(line, receipt, None, False, issue, self.policy.receipt_message(line.status, line.reason))
 
         check = self._check(head, receipt)
         if check.matches:
             line = self._save_line(claim, head, receipt, path, key, "ok", None, check)
-            return self._result(line, receipt, check, True, None, "Matches what you claimed. It will be counted.")
+            return self._result(line, receipt, check, True, None, self.policy.receipt_message(line.status, line.reason))
 
         issue = check.issue or f"This looks like a {check.merchant_type} bill, not {head}."
         line = self._save_line(claim, head, receipt, path, key, "excluded", issue, check)
         self._report_mismatch(claim, receipt, issue)
         self.db.commit()
-        return self._result(line, receipt, check, False, issue, f"{issue} It is flagged and not counted.")
+        return self._result(line, receipt, check, False, issue, self.policy.receipt_message(line.status, line.reason))
 
     def _check(self, head: str, receipt: ReceiptData) -> ClaimCheck:
         """Does the bill fit the claimed head? 'Other' is never questioned, so it skips the AI call."""

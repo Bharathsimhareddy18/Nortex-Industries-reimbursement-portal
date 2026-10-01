@@ -5,11 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.database.db import utc_now
-from src.database.models import Approval, Claim, Employee
+from src.database.models import Approval, Category, Claim, Employee
 from src.errors import AppError
 from src.notifications.notifications import Notifications
 from src.policy.policy import Policy
-from src.pydantic_models.approval import ApproveOut, RejectOut
+from src.pydantic_models.approval import ApproveOut, PendingApprovalOut, RejectOut
 from src.pydantic_models.claim import ApproverOut
 
 # Which approvals are running for a claim in each status. A claim in any other status has nothing to decide.
@@ -52,6 +52,29 @@ class Approvals:
         self.notifications.send(claim.employee_code, claim_no, f"{user.name} ({step.role}) rejected your claim: {remarks}")
         self.db.commit()
         return RejectOut(claim_no=claim_no, status=claim.status)
+
+    # ---------- the queue ----------
+
+    def pending_for(self, user: Employee) -> list[PendingApprovalOut]:
+        """The claims waiting on `user` right now: their own undecided step, in a stage that is running, with every earlier step done.
+
+        This is exactly the test approve() applies, so anything listed here can be approved, and anything not listed cannot.
+        """
+        query = (select(Approval, Claim, Category.name, Employee.name)
+                 .join(Claim, Claim.claim_no == Approval.claim_no).join(Category, Category.id == Claim.category_id)
+                 .join(Employee, Employee.emp_code == Claim.employee_code)
+                 .where(Approval.approver_code == user.emp_code, Approval.decision == "pending", Claim.employee_code != user.emp_code)
+                 .order_by(Approval.id))
+        waiting = []
+        for step, claim, template_name, claimant_name in self.db.execute(query):
+            if PHASE_BY_STATUS.get(claim.status) != step.phase or self._first_pending(claim.claim_no, step.phase).id != step.id:
+                continue  # that stage is over (e.g. rejected), or an earlier approver has not acted yet
+            waiting.append(PendingApprovalOut(
+                claim_no=claim.claim_no, claimant_code=claim.employee_code, claimant_name=claimant_name, template_name=template_name,
+                level=claim.level, status=claim.status, estimated_amount=claim.estimated_amount, advance_requested=self._advance(claim),
+                phase=step.phase, role=step.role, action=step.action, created_at=claim.created_at,
+            ))
+        return waiting
 
     # ---------- checks ----------
 

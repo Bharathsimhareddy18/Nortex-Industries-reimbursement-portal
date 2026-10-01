@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi import APIRouter
 import uvicorn
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from apis.approval_router import router as approval_router
@@ -14,6 +15,9 @@ from apis.user_router import router as user_router
 from src.errors import AppError
 
 app = FastAPI()
+# The UI lives in another repo and is served from another address, so the browser only lets it call this API if we say it may.
+# Auth is in headers (no cookies), so allowing every origin is safe enough for this demo; list the UI's address here before real use.
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(user_router)
 app.include_router(dashboard_router)
 app.include_router(templates_router)

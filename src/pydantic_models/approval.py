@@ -1,5 +1,6 @@
 """The approvals table, as the API shows it."""
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -39,3 +40,20 @@ class RejectIn(BaseModel):
 class RejectOut(BaseModel):
     claim_no: str
     status: ClaimStatus  # always 'rejected'
+
+
+class PendingApprovalOut(BaseModel):
+    """One claim that is waiting for the logged-in user to act on it."""
+
+    claim_no: str
+    claimant_code: str
+    claimant_name: str
+    template_name: str
+    level: int  # L1..L4
+    status: ClaimStatus
+    estimated_amount: Decimal
+    advance_requested: Decimal  # what the claimant asked for, 0 if nothing
+    phase: Literal["request", "settlement"]
+    role: str  # the role this step is for
+    action: Literal["approve", "release_advance", "verify", "release_payment"]  # what the user is being asked to do
+    created_at: datetime  # when the claim was raised

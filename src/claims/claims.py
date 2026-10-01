@@ -5,9 +5,11 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from src.database.models import Approval, Category, Claim, Employee
+from src.database.models import Approval, Category, Claim, Employee, Line
+from src.errors import AppError
 from src.notifications.notifications import Notifications
 from src.policy.policy import Policy
+from src.pydantic_models.claim import ClaimDetailOut, DetailApprovalOut, DetailReceiptOut, DetailTotalsOut
 from src.templates.templates import Templates
 
 
@@ -37,6 +39,58 @@ class Claims:
             self._notify(claim, employee, template, first)
         self.db.commit()
         return claim, approvers
+
+    def list_mine(self, user: Employee) -> list[tuple[Claim, str]]:
+        """Every claim this employee raised, newest first, each with its template's name."""
+        query = (select(Claim, Category.name).join(Category, Category.id == Claim.category_id)
+                 .where(Claim.employee_code == user.emp_code).order_by(Claim.created_at.desc(), Claim.claim_no.desc()))
+        return [(claim, name) for claim, name in self.db.execute(query)]
+
+    def _visible_claim(self, user: Employee, claim_no: str) -> Claim:
+        """The claim, if it exists and `user` may see it: its owner, or someone on its approval list."""
+        claim = self.db.get(Claim, claim_no)
+        if claim is None:
+            raise AppError(404, "Claim not found")
+        approvers = self.db.scalars(select(Approval.approver_code).where(Approval.claim_no == claim_no))
+        if user.emp_code != claim.employee_code and user.emp_code not in set(approvers):
+            raise AppError(403, "You are not involved in this claim")
+        return claim
+
+    def get_status(self, user: Employee, claim_no: str) -> str:
+        """Just the claim's current status."""
+        return self._visible_claim(user, claim_no).status
+
+    def get_detail(self, user: Employee, claim_no: str) -> ClaimDetailOut:
+        """The whole claim for its page: form answers, every approval step, every receipt, and the totals once it is submitted."""
+        claim = self._visible_claim(user, claim_no)
+        steps = self.db.execute(
+            select(Approval, Employee.name).join(Employee, Employee.emp_code == Approval.approver_code)
+            .where(Approval.claim_no == claim_no).order_by(Approval.phase, Approval.step)  # 'request' sorts before 'settlement'
+        ).all()
+        lines = self.db.scalars(select(Line).where(Line.claim_no == claim_no).order_by(Line.id)).all()
+        return ClaimDetailOut(
+            claim_no=claim_no, claimant_code=claim.employee_code, claimant_name=self.db.get(Employee, claim.employee_code).name,
+            template_name=self.db.get(Category, claim.category_id).name, status=claim.status, level=claim.level,
+            estimated_amount=claim.estimated_amount, advance_requested=Decimal(str(claim.details.get("advance_requested", 0))).quantize(Decimal("0.01")),
+            advance_amount=claim.advance_amount, created_at=claim.created_at, fields=claim.details,
+            approvals=[DetailApprovalOut(name=name, role=a.role, phase=a.phase, step=a.step, action=a.action, decision=a.decision,
+                                         remarks=a.remarks, decided_at=a.decided_at) for a, name in steps],
+            receipts=[self._receipt(line) for line in lines],
+            totals=self._totals(claim) if any(a.phase == "settlement" for a, _ in steps) else None,
+        )
+
+    def _receipt(self, line: Line) -> DetailReceiptOut:
+        """One saved line as a receipt. The merchant is what the AI read from the image."""
+        merchant = ((line.extracted or {}).get("receipt") or {}).get("merchant") or line.description
+        return DetailReceiptOut(
+            line_id=line.id, head=line.head, status=line.status, message=self.policy.receipt_message(line.status, line.reason),
+            merchant=merchant, bill_no=line.proof_ref, bill_date=line.line_date, amount=line.amount, paid_by=line.paid_by,
+        )
+
+    def _totals(self, claim: Claim) -> DetailTotalsOut:
+        """The settlement summary: what the employee paid, the advance, and what is payable or recoverable."""
+        t = self.policy.totals(claim.claim_no, claim.advance_amount)
+        return DetailTotalsOut(paid_by_employee=t["paid_by_employee"], advance=t["advance"], payable=t["payable"], recoverable=t["recoverable"])
 
     def _advance_step(self, template: Category, clean: dict) -> dict | None:
         """The template's 'Finance releases the advance' step, but only if this claim asks for an advance (no advance = no Finance step)."""

@@ -59,3 +59,70 @@ class CreateClaimOut(BaseModel):
     level: int  # 1..4 (L1..L4)
     estimated_amount: Decimal
     approvers: list[ApproverOut]  # in approval order; empty if nobody above the claimant needs to approve
+
+
+class ClaimStatusOut(BaseModel):
+    claim_no: str
+    status: ClaimStatus
+
+
+class MyClaimOut(BaseModel):
+    """One row of the "my claims" list."""
+
+    claim_no: str
+    template_name: str
+    level: int  # L1..L4
+    status: ClaimStatus
+    estimated_amount: Decimal
+    created_at: datetime
+
+
+class DetailApprovalOut(BaseModel):
+    """One step of the claim's approval chain, as shown on the claim page."""
+
+    name: str  # who is asked to act
+    role: str
+    phase: Literal["request", "settlement"]
+    step: int
+    action: Literal["approve", "release_advance", "verify", "release_payment"]
+    decision: Literal["pending", "approved", "returned", "rejected"]
+    remarks: str | None
+    decided_at: datetime | None
+
+
+class DetailReceiptOut(BaseModel):
+    """One uploaded receipt, as shown on the claim page."""
+
+    line_id: int
+    head: str
+    status: LineStatus
+    message: str  # the same sentence upload_receipt returned
+    merchant: str
+    bill_no: str | None
+    bill_date: date | None
+    amount: Decimal
+    paid_by: PaidBy
+
+
+class DetailTotalsOut(BaseModel):
+    paid_by_employee: Decimal
+    advance: Decimal
+    payable: Decimal
+    recoverable: Decimal
+
+
+class ClaimDetailOut(BaseModel):
+    claim_no: str
+    claimant_code: str
+    claimant_name: str
+    template_name: str
+    status: ClaimStatus
+    level: int
+    estimated_amount: Decimal
+    advance_requested: Decimal
+    advance_amount: Decimal  # what Finance actually released
+    created_at: datetime
+    fields: dict  # the answers on the request form
+    approvals: list[DetailApprovalOut]  # both stages, in order; the settlement steps appear once it is submitted
+    receipts: list[DetailReceiptOut]  # oldest first
+    totals: DetailTotalsOut | None  # None until the settlement is submitted
