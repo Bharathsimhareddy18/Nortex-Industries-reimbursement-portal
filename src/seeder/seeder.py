@@ -60,6 +60,9 @@ SETTLEMENT_STEPS = [
     {"phase": "settlement", "action": "release_payment", "emp_code": "NX-3300"},
 ]
 
+# Every template asks why the money is needed. Approvers and Finance read it before they decide.
+REASON = _field("reason", "What is this for, and why is the money needed?", "longtext", min=10)
+
 # The three fixed templates: name -> (fields, finance steps). Ids are assigned in this order: 1 Travelling, 2 Food, 3 Hotel stay.
 TEMPLATES = {
     "Travelling": (
@@ -71,6 +74,7 @@ TEMPLATES = {
             _field("estimated_trip_cost", "Estimated trip cost", "money", min=0.01),
             _field("advance_requested", "Advance requested", "money", required=False, min=0, default=0),
             _field("is_international", "International trip", "boolean", required=False, default=False),
+            REASON,
         ],
         [ADVANCE_STEP, *SETTLEMENT_STEPS],
     ),
@@ -79,6 +83,7 @@ TEMPLATES = {
             _field("amount", "Amount", "money", min=0.01),
             _field("city", "City", "text"),
             _field("city_tier", "City tier", "choice", choices=[1, 2, 3]),
+            REASON,
         ],
         SETTLEMENT_STEPS,
     ),
@@ -88,6 +93,7 @@ TEMPLATES = {
             _field("city", "City", "text"),
             _field("city_tier", "City tier", "choice", choices=[1, 2, 3]),
             _field("number_of_days", "Number of days stayed", "integer", min=1),
+            REASON,
         ],
         SETTLEMENT_STEPS,
     ),

@@ -71,6 +71,7 @@ class Settings(BaseSettings):
 
     # What each claimed head means. The model reads this when it checks a receipt against the claim. 'Other' is never checked.
     head_meanings: dict[str, str] = {
+        "Travelling": "a flight, train or bus ticket, fuel, tolls or another cost of getting to the destination",
         "Lodging": "a hotel room stay",
         "Meals": "food and drink for the employee",
         "Business Entertainment": "a meal or hospitality hosted for customers or partners",

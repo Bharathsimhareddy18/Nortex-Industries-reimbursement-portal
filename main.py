@@ -1,16 +1,16 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi import APIRouter
 import uvicorn
 from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from apis.admin_router import router as admin_router
 from apis.approval_router import router as approval_router
+from apis.dependencies import current_user
 from apis.claim_router import router as claim_router
 from apis.dashboard_router import router as dashboard_router
 from apis.notification_router import router as notification_router
@@ -34,17 +34,20 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-# The UI is served by this same app (see the bottom of this file), so it needs no CORS. It stays open so the UI can also be
-# hosted somewhere else. Auth is in headers (no cookies), so allowing every origin is safe enough for this demo.
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+# There is no CORS middleware on purpose. The web pages are served by this same app (see the bottom of this file), so the
+# browser needs no permission to call the API, and pages from any OTHER website are refused by the browser's default rules.
+
+# Deny by default: every router below requires a valid login (the emp-code and session-token headers) unless it is left out
+# of this list on purpose. Only /auth/login (inside user_router, which protects /auth/me itself) and /health are open.
+LOGIN_REQUIRED = [Depends(current_user)]
 app.include_router(user_router)
-app.include_router(dashboard_router)
-app.include_router(templates_router)
-app.include_router(claim_router)
-app.include_router(approval_router)
-app.include_router(notification_router)
-app.include_router(settlement_router)
-app.include_router(admin_router)
+app.include_router(dashboard_router, dependencies=LOGIN_REQUIRED)
+app.include_router(templates_router, dependencies=LOGIN_REQUIRED)
+app.include_router(claim_router, dependencies=LOGIN_REQUIRED)
+app.include_router(approval_router, dependencies=LOGIN_REQUIRED)
+app.include_router(notification_router, dependencies=LOGIN_REQUIRED)
+app.include_router(settlement_router, dependencies=LOGIN_REQUIRED)
+app.include_router(admin_router, dependencies=LOGIN_REQUIRED)
 
 
 @app.exception_handler(AppError)

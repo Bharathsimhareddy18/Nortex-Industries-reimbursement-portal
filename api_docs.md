@@ -4,7 +4,8 @@ Reference for building the UI. Every example below is a real response from the r
 
 - Run locally: `uvicorn main:app --reload` (default `http://127.0.0.1:8000`).
 - Live, clickable docs generated from the code: `/docs`. Raw schema: `/openapi.json`.
-- CORS is open, so a UI on any address can call it.
+- The web pages are served by this same app, so they need no CORS. Pages from any other website are refused by the browser.
+- Every endpoint except `POST /auth/login` and `GET /health` requires the login headers (see Conventions); this is enforced for the whole app, not endpoint by endpoint.
 
 ## 1. Conventions
 
@@ -164,14 +165,17 @@ How to draw each `type`:
 | `datetime` | date and time picker, send ISO 8601 |
 | `boolean` | checkbox |
 | `choice` | dropdown of `choices` (send the value as it is: a string, or the number 1, 2, 3 for `city_tier`) |
+| `longtext` | a multi-line text box (a paragraph), at least `min` characters, at most 1000 |
 
 Fields the three templates ask for:
 
 | Template | Fields |
 |---|---|
-| 1 Travelling | `destination`, `mode_of_transport`, `number_of_days`, `departure_time`, `estimated_trip_cost`, optional `advance_requested`, optional `is_international` |
-| 2 Food | `amount`, `city`, `city_tier` (1, 2 or 3) |
-| 3 Hotel stay | `hotel_name`, `city`, `city_tier` (1, 2 or 3), `number_of_days` |
+| 1 Travelling | `destination`, `mode_of_transport`, `number_of_days`, `departure_time`, `estimated_trip_cost`, optional `advance_requested`, optional `is_international`, **`reason`** |
+| 2 Food | `amount`, `city`, `city_tier` (1, 2 or 3), **`reason`** |
+| 3 Hotel stay | `hotel_name`, `city`, `city_tier` (1, 2 or 3), `number_of_days`, **`reason`** |
+
+**`reason`** (type `longtext`, required, at least 10 characters) is on every template: *what is this for, and why is the money needed?* It is stored with the claim and shown to every approver: it comes back as `reason` in `get_pending_approvals` and inside `fields` in `get_claim`.
 
 The amount that decides the approval level is `estimated_trip_cost` (Travelling), `amount` (Food), and for Hotel stay it is nights multiplied by the lodging limit of the tier (Tier 1: 6,000 a night).
 
@@ -182,7 +186,8 @@ Body:
 ```json
 { "template_id": 1,
   "fields": { "destination": "Bengaluru", "mode_of_transport": "Air", "number_of_days": 5,
-              "departure_time": "2026-06-16T07:55:00", "estimated_trip_cost": "48000", "advance_requested": "20000" } }
+              "departure_time": "2026-06-16T07:55:00", "estimated_trip_cost": "48000", "advance_requested": "20000",
+              "reason": "Customer review at Vertex Technologies and the plant visit, to close the Q3 pricing agreement." } }
 ```
 Response `201`:
 ```json
@@ -204,7 +209,8 @@ Response `200`:
 ```json
 [ { "claim_no": "TRQ-2026-0001", "claimant_code": "NX-4471", "claimant_name": "Chaitanya Reddy",
     "template_name": "Travelling", "level": 2, "status": "pending_approval",
-    "estimated_amount": "48000.00", "advance_requested": "20000", "phase": "request",
+    "estimated_amount": "48000.00", "advance_requested": "20000",
+    "reason": "Customer review at Vertex Technologies and the plant visit, to close the Q3 pricing agreement.", "phase": "request",
     "role": "Reporting Manager", "action": "approve", "created_at": "2026-10-01T02:44:04" } ]
 ```
 `action` says what the user is being asked to do, so the button can be labelled to match:
@@ -280,7 +286,7 @@ Send as `multipart/form-data`:
 | Field | Value |
 |---|---|
 | `claim_no` | `TRQ-2026-0001` |
-| `head` | what the receipt is for: `Lodging`, `Meals`, `Business Entertainment`, `Local conveyance`, `Other` |
+| `head` | what the receipt is for: `Travelling` (tickets, fuel, tolls), `Lodging`, `Meals`, `Business Entertainment`, `Local conveyance`, `Other`. The UI offers the ones that fit the claim type. |
 | `file` | a PNG or JPEG, up to 5 MB |
 
 What happens: the AI reads the image, we check it is not a repeat, then the AI checks the bill fits the `head`. The amount comes from the bill, the employee does not type it.
@@ -355,6 +361,11 @@ Response `200` (shortened):
 - `receipts`: oldest first, including flagged (`excluded`) and `duplicate` ones. `message` is the same sentence `upload_receipt` returned, so a reloaded page reads exactly like the live one. Only `ok` receipts are counted.
 - `totals`: `null` until the settlement is submitted, then the same numbers `submit_settlement` returned.
 
+### `GET /get_receipt_image?line_id=4`
+The photo of one uploaded bill (`line_id` is in each receipt of `get_claim`). **Screen: the bills on the claim page.** Who may open it: the claim's **owner**, **anyone on its approval list** (so Finance can check the invoice before verifying it), and the **admin**; everyone else gets `403`.
+Response `200`: the image itself (`image/png` or `image/jpeg`), not JSON. `404` unknown bill, or the file is gone (for example after a server restart).
+An `<img src>` cannot send the session headers, so the UI fetches it with them and shows it as an object URL (`apiImage()` in `ui/js/api.js`).
+
 ### `GET /get_my_claims`
 The claims the logged-in employee raised, newest first. **Screen: dashboard "My claims" and the Claims page.** The UI does not need to remember claim numbers itself; ask this each time the page opens. A claim raised on another browser or device shows up too.
 
@@ -388,7 +399,7 @@ A welcome message, public, no headers. Useful only to check the server is up.
 
 **Employee:** `login` → `dashboard/me` → `get_templates` → `get_template_required_fields` → `create_claim` → (wait; poll `get_all_notifications`) → after "fully approved": `upload_receipt` (one per bill) → `submit_settlement` → final notification says the amount is dispatched.
 
-**Manager:** `login` → `get_all_notifications` (find the claim that needs approval) → `approve` or `reject`.
+**Manager:** `login` → `get_pending_approvals` (the queue, each claim with the reason) → `get_claim` and `get_receipt_image` to read the details and check the bills → `approve` or `reject`.
 
 **Finance:** the same as a manager. Ravi sees "release the advance" and later "verify"; Kavitha sees "release the payout". Both use `approve`.
 
@@ -396,7 +407,6 @@ A welcome message, public, no headers. Useful only to check the server is up.
 
 | Missing | Effect on the UI |
 |---|---|
-| the bill **image** back (thumbnails after a reload) | the claim page shows a receipt icon, not the photo |
 | mark notifications as read | `is_read` never changes |
 | return a claim with remarks (send back for correction) | only approve or reject |
 | edit or delete an uploaded receipt | a wrongly flagged receipt stays in the list as excluded |

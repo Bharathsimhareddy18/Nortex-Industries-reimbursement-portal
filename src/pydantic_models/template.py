@@ -12,7 +12,7 @@ class TemplateOut(BaseModel):
 class FieldOut(BaseModel):
     name: str  # the key to use in create_claim
     label: str  # what the form shows
-    type: Literal["text", "integer", "money", "datetime", "boolean", "choice"]
+    type: Literal["text", "integer", "money", "datetime", "boolean", "choice", "longtext"]
     required: bool
     choices: list[str | int] | None = None  # for type 'choice'
     min: float | None = None  # smallest allowed number

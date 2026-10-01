@@ -57,6 +57,8 @@ class Templates:
         kind, minimum = field["type"], field.get("min", 0)
         if kind == "text":
             return Annotated[str, Field(min_length=1)]
+        if kind == "longtext":  # a paragraph; "min" is the least number of characters (so "ok" is not an answer to "why?")
+            return Annotated[str, Field(min_length=int(field.get("min", 1)), max_length=1000)]
         if kind == "integer":
             return Annotated[int, Field(ge=minimum)]
         if kind == "money":

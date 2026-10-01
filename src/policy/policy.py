@@ -81,7 +81,7 @@ class Policy:
 
     def section_of(self, head: str) -> str:
         """Which block of the Settlement Form a head belongs to."""
-        return {"Lodging": "Lodging", "Local conveyance": "Transport"}.get(head, "Other")
+        return {"Lodging": "Lodging", "Travelling": "Transport", "Local conveyance": "Transport"}.get(head, "Other")
 
     def receipt_message(self, status: str, reason: str | None) -> str:
         """The sentence shown for a receipt. Used when it is uploaded and again when the claim is read, so the two always agree."""

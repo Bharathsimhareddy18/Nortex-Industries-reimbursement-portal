@@ -71,7 +71,7 @@ class Approvals:
                 continue  # that stage is over (e.g. rejected), or an earlier approver has not acted yet
             waiting.append(PendingApprovalOut(
                 claim_no=claim.claim_no, claimant_code=claim.employee_code, claimant_name=claimant_name, template_name=template_name,
-                level=claim.level, status=claim.status, estimated_amount=claim.estimated_amount, advance_requested=self._advance(claim),
+                level=claim.level, status=claim.status, estimated_amount=claim.estimated_amount, advance_requested=self._advance(claim), reason=claim.details.get("reason"),
                 phase=step.phase, role=step.role, action=step.action, created_at=claim.created_at,
             ))
         return waiting

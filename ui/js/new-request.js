@@ -11,6 +11,7 @@ const TEMPLATE_LOOK = {
 // Extra help for fields whose rule is not obvious from the label.
 const FIELD_HELP = {
   advance_requested: "Up to 60% of the estimated trip cost.",
+  reason: "Your approvers and Finance will read this before they decide. Say what the money is for and why it is needed.",
 };
 
 let currentTemplate = null;
@@ -90,6 +91,11 @@ function fieldHtml(field) {
     input = `<input class="input mono" id="${id}" type="number" step="0.01" inputmode="decimal" ${min} ${value} ${required}>`;
   } else if (field.type === "datetime") {
     input = `<input class="input" id="${id}" type="datetime-local" ${required}>`;
+  } else if (field.type === "longtext") {
+    // A paragraph, so it gets a real text box and the full width of the form.
+    return `<div class="field span-2" data-field="${field.name}">${label}
+        <textarea class="textarea" id="${id}" rows="4" maxlength="1000" ${required}></textarea>
+        ${help}<span class="error" hidden></span></div>`;
   } else {
     input = `<input class="input" id="${id}" type="text" ${required}>`;
   }
@@ -129,6 +135,10 @@ function readForm() {
     if (raw === "") {
       // Leave empty optional fields out, so the API applies its own default.
       if (field.required) problems.push(`${field.name}: This field is required`);
+      continue;
+    }
+    if (field.type === "longtext" && field.min && raw.length < field.min) {
+      problems.push(`${field.name}: Please write at least ${field.min} characters`);
       continue;
     }
     if (field.type === "choice") values[field.name] = field.choices[Number(raw)];

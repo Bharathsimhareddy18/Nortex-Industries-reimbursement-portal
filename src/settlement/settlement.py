@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from config.setting import settings
 from src.ai.groq import Groq
+from src.claims.claims import Claims
 from src.database.models import Approval, Category, Claim, Employee, Line
 from src.errors import AppError
 from src.notifications.notifications import Notifications
@@ -114,6 +115,22 @@ class Settlement:
         """The upload answer, including everything the model read."""
         return ReceiptOut(line_id=line.id, head=line.head, status=line.status, matched=matched, issue=issue, message=message,
                           extracted=receipt, check=check)
+
+    # ---------- looking at a bill later ----------
+
+    def receipt_file(self, user: Employee, line_id: int) -> tuple[Path, str]:
+        """The saved image of one bill, for the people who may see the claim: its owner, anyone on its approval list (so Finance
+        can check the invoice before verifying), and the admin. Returns the file and its type."""
+        line = self.db.get(Line, line_id)
+        if line is None:
+            raise AppError(404, "Bill not found")
+        if user.role != "Admin":
+            Claims(self.db).visible_claim(user, line.claim_no)  # raises 403 / 404 when this person is not involved
+        path = Path(line.file_path) if line.file_path else None
+        # Only files inside our uploads folder are ever served, whatever the database says.
+        if path is None or not path.is_file() or UPLOAD_DIR.resolve() not in path.resolve().parents:
+            raise AppError(404, "The image of this bill is no longer available")
+        return path, self._image_type(path.read_bytes()[:16])
 
     # ---------- submitting ----------
 

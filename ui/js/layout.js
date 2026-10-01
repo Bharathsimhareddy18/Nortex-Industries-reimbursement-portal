@@ -24,10 +24,9 @@ function drawSidebar(me, activeKey) {
     { key: "dashboard", href: "dashboard.html", icon: "ph-squares-four", label: "Dashboard" },
     { key: "claims", href: "claims.html", icon: "ph-files", label: "Claims" },
     { key: "new", href: "new-request.html", icon: "ph-plus-circle", label: "New request" },
-    // No approval-queue endpoint exists, so approvers act from the notifications list.
-    isApprover(me.role)
-      ? { key: "inbox", href: "notifications.html", icon: "ph-check-square-offset", label: "Approvals" }
-      : { key: "inbox", href: "notifications.html", icon: "ph-bell", label: "Notifications" },
+    // Approvals are things to DO (the queue); notifications are things to READ (the message list).
+    ...(isApprover(me.role) ? [{ key: "approvals", href: "approvals.html", icon: "ph-check-square-offset", label: "Approvals" }] : []),
+    { key: "notifications", href: "notifications.html", icon: "ph-bell", label: "Notifications" },
   ];
 
   const nav = links

@@ -21,23 +21,16 @@
       <div class="page" style="max-width:920px">
         <header class="page-head">
           <div>
-            <h1 id="title">Notifications</h1>
-            <p id="intro">Newest first.</p>
+            <h1>Notifications</h1>
+            <p>Messages about your claims, newest first.</p>
           </div>
           <button type="button" class="btn btn-ghost" id="refresh"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i>Refresh</button>
         </header>
 
-        <!-- Approvers only: the API's queue of claims where it is this person's turn. -->
-        <section class="panel" id="queue-panel" hidden>
-          <div class="panel-head"><h2>Waiting for you</h2><span class="muted" id="queue-count" style="font-size:13px"></span></div>
-          <div id="queue"></div>
-        </section>
-
-        <section class="panel" id="list-panel">
-          <div class="panel-head" id="list-head" hidden><h2>Notifications</h2></div>
+        <section class="panel">
           <div id="list"><div class="panel-pad" style="display:grid;gap:16px">
             <div class="skeleton" style="width:80%"></div><div class="skeleton" style="width:55%"></div><div class="skeleton" style="width:70%"></div>
-          </div>
+          </div></div>
         </section>
       </div>
       </main>

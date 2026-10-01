@@ -53,6 +53,7 @@ class PendingApprovalOut(BaseModel):
     status: ClaimStatus
     estimated_amount: Decimal
     advance_requested: Decimal  # what the claimant asked for, 0 if nothing
+    reason: str | None  # what the money is for and why, in the claimant's words
     phase: Literal["request", "settlement"]
     role: str  # the role this step is for
     action: Literal["approve", "release_advance", "verify", "release_payment"]  # what the user is being asked to do

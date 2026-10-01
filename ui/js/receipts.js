@@ -3,15 +3,42 @@
 // after each upload or submit the page fetches the claim again, so nothing is stored here.
 
 const MAX_BYTES = 5 * 1024 * 1024; // same limit as the API, checked here to fail fast
-const HEADS = ["Lodging", "Meals", "Business Entertainment", "Local conveyance", "Other"];
+// What a bill can be for, by claim type. A trip can include any of them; a food claim only needs the food ones.
+const HEADS_BY_TEMPLATE = {
+  Travelling: ["Travelling", "Local conveyance", "Lodging", "Meals", "Business Entertainment", "Other"],
+  Food: ["Meals", "Business Entertainment", "Other"],
+  "Hotel stay": ["Lodging", "Meals", "Other"],
+};
+const headsFor = (templateName) => HEADS_BY_TEMPLATE[templateName] || HEADS_BY_TEMPLATE.Travelling;
 const RESULT_LOOK = {
   ok: { label: "Counted", tone: "success" },
   excluded: { label: "Flagged", tone: "danger" },
   duplicate: { label: "Duplicate", tone: "warn" },
 };
-// Photos picked during this visit, by line id, so a new receipt shows its picture.
-// Memory only: the API does not return images, so after a reload the receipt shows an icon.
+// Bill photos by line id, as object URLs. Memory only: they are fetched from GET /get_receipt_image
+// (the owner, the approvers and Finance may all open them) and kept for this visit.
 const thumbnails = {};
+
+function thumbHtml(lineId) {
+  return thumbnails[lineId]
+    ? `<a href="${thumbnails[lineId]}" target="_blank" rel="noopener" title="Open the bill" style="display:block"><img src="${thumbnails[lineId]}" alt="Photo of the bill"></a>`
+    : `<div class="thumb"><i class="ph ph-receipt" aria-hidden="true"></i></div>`;
+}
+
+// Loads each bill's photo from the API and swaps it in for the placeholder icon.
+async function hydrateThumbnails(receipts) {
+  for (const r of receipts || []) {
+    if (!thumbnails[r.line_id]) {
+      try {
+        thumbnails[r.line_id] = await apiImage(`/get_receipt_image?line_id=${encodeURIComponent(r.line_id)}`);
+      } catch {
+        continue; // keep the icon: the file may be gone after a server restart
+      }
+    }
+    const slot = document.querySelector(`.receipt[data-line="${CSS.escape(String(r.line_id))}"] .thumb-slot`);
+    if (slot) slot.innerHTML = thumbHtml(r.line_id);
+  }
+}
 
 function settlementHtml(claim) {
   const receipts = claim.receipts || [];
@@ -25,7 +52,7 @@ function settlementHtml(claim) {
         <div class="field">
           <label for="head">What is this bill for?<span class="req">*</span></label>
           <select class="select" id="head" required>
-            <option value="">Select…</option>${HEADS.map((h) => `<option>${h}</option>`).join("")}
+            <option value="">Select…</option>${headsFor(claim.template_name).map((h) => `<option>${h}</option>`).join("")}
           </select>
           <span class="help">The amount is read from the bill. You never type it.</span>
         </div>
@@ -68,13 +95,10 @@ function receiptsHtml(receipts) {
 
 function receiptHtml(r) {
   const look = RESULT_LOOK[r.status] || { label: r.status, tone: "neutral" };
-  const thumb = thumbnails[r.line_id]
-    ? `<img src="${thumbnails[r.line_id]}" alt="">`
-    : `<div class="thumb"><i class="ph ph-receipt" aria-hidden="true"></i></div>`;
   const facts = [r.head, r.bill_no && "Bill " + r.bill_no, r.bill_date, r.paid_by && "Paid by " + r.paid_by]
     .filter(Boolean).map((f) => `<span>${escapeHtml(f)}</span>`).join("");
-  return `<div class="receipt${r.status === "ok" ? "" : " is-out"}">
-      ${thumb}
+  return `<div class="receipt${r.status === "ok" ? "" : " is-out"}" data-line="${escapeHtml(r.line_id)}">
+      <span class="thumb-slot" style="display:contents">${thumbHtml(r.line_id)}</span>
       <div class="receipt-body">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><strong>${escapeHtml(r.merchant || "Unknown merchant")}</strong>
           <span class="badge badge-${look.tone}">${look.label}</span></div>

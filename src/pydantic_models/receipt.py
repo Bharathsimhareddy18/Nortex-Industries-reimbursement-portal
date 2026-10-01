@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from src.pydantic_models.claim import ApproverOut, ClaimStatus
 
 # What the employee says a receipt is for.
-Head = Literal["Lodging", "Meals", "Business Entertainment", "Local conveyance", "Other"]
+Head = Literal["Travelling", "Lodging", "Meals", "Business Entertainment", "Local conveyance", "Other"]
 
 
 class ReceiptData(BaseModel):

@@ -1,5 +1,6 @@
 """Trip settlement."""
 from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from apis.dependencies import current_user
@@ -27,3 +28,11 @@ def upload_receipt(
 def submit_settlement(body: SubmitIn, user: Employee = Depends(current_user), db: Session = Depends(get_db)):
     """Send the counted receipts to Finance. Returns the total, the advance, and what is payable or recoverable."""
     return Settlement(db).submit(user, body.claim_no)
+
+
+@router.get("/get_receipt_image")
+def get_receipt_image(line_id: int, user: Employee = Depends(current_user), db: Session = Depends(get_db)):
+    """The photo of one uploaded bill (the line_id comes from get_claim). Only the claim's owner, its approvers (Finance included)
+    and the admin may open it."""
+    path, mime = Settlement(db).receipt_file(user, line_id)
+    return FileResponse(path, media_type=mime, headers={"Cache-Control": "private, max-age=300"})

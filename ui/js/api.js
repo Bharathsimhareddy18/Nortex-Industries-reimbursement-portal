@@ -88,3 +88,21 @@ async function api(path, options = {}) {
   }
   return data;
 }
+
+
+// An <img> tag cannot send the session headers, so a protected image (a bill) is fetched here
+// and handed to the page as an object URL.
+async function apiImage(path) {
+  const session = getSession();
+  const base = await API_BASE_READY;
+  const response = await fetch(base + path, {
+    headers: { "emp-code": session ? session.emp_code : "", "session-token": session ? session.session_token : "" },
+  });
+  if (response.status === 401) {
+    clearSession();
+    location.replace("login.html");
+    return new Promise(() => {});
+  }
+  if (!response.ok) throw new ApiError(response.status, "The image could not be loaded.");
+  return URL.createObjectURL(await response.blob());
+}

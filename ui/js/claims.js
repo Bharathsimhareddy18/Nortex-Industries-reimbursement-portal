@@ -96,10 +96,14 @@ function drawClaim() {
       <a href="claims.html" class="btn btn-ghost"><i class="ph ph-arrow-left" aria-hidden="true"></i>All claims</a>
     </header>
 
+    ${reasonHtml()}
+
     <article class="panel claim-card">
       ${progressSection()}
       ${canSettle() ? `<section id="settlement">${settlementHtml(claim)}</section>` : waitingHtml()}
     </article>
+
+    ${canSettle() ? "" : billsHtml()}
 
     <div class="claim-grid">
       <section class="panel">
@@ -113,6 +117,27 @@ function drawClaim() {
     </div>`;
 
   if (canSettle()) wireSettlement(claimNo, reloadAndDraw);
+  hydrateThumbnails(claim.receipts); // the photos of the bills, for the owner, the approvers and Finance alike
+}
+
+// Why the money is needed, in the claimant's own words. Approvers and Finance read this first.
+function reasonHtml() {
+  const reason = claim.fields && claim.fields.reason;
+  if (!reason) return "";
+  return `<section class="panel">
+      <div class="panel-head"><h2>Why this money is needed</h2></div>
+      <div class="panel-pad"><p style="white-space:pre-wrap;margin:0">${escapeHtml(reason)}</p></div>
+    </section>`;
+}
+
+// The uploaded bills, for people who are not filing the settlement (an approver or Finance checking the invoices).
+function billsHtml() {
+  const receipts = claim.receipts || [];
+  if (!receipts.length) return "";
+  return `<section class="panel">
+      <div class="panel-head"><h2>Bills</h2><span class="muted" style="font-size:12.5px">Click a photo to open it</span></div>
+      <div class="panel-pad">${receiptsHtml(receipts)}</div>
+    </section>`;
 }
 
 function isMine() {
@@ -227,7 +252,7 @@ function factsHtml() {
     hasAdvance() ? ["Advance asked", `<span class="mono">${formatMoney(claim.advance_requested)}</span>`] : null,
     hasAdvance() ? ["Advance released", `<span class="mono">${formatMoney(claim.advance_amount)}</span>`] : null,
     ...Object.entries(claim.fields || {})
-      .filter(([name]) => !["advance_requested", "estimated_trip_cost", "amount"].includes(name))
+      .filter(([name]) => !["advance_requested", "estimated_trip_cost", "amount", "reason"].includes(name))
       .map(([name, value]) => [escapeHtml(name.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase())), escapeHtml(fieldValue(value))]),
   ].filter(Boolean);
   return `<dl class="facts-grid">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;

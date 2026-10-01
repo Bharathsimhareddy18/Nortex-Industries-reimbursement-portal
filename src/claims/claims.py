@@ -46,7 +46,7 @@ class Claims:
                  .where(Claim.employee_code == user.emp_code).order_by(Claim.created_at.desc(), Claim.claim_no.desc()))
         return [(claim, name) for claim, name in self.db.execute(query)]
 
-    def _visible_claim(self, user: Employee, claim_no: str) -> Claim:
+    def visible_claim(self, user: Employee, claim_no: str) -> Claim:
         """The claim, if it exists and `user` may see it: its owner, or someone on its approval list."""
         claim = self.db.get(Claim, claim_no)
         if claim is None:
@@ -58,11 +58,11 @@ class Claims:
 
     def get_status(self, user: Employee, claim_no: str) -> str:
         """Just the claim's current status."""
-        return self._visible_claim(user, claim_no).status
+        return self.visible_claim(user, claim_no).status
 
     def get_detail(self, user: Employee, claim_no: str) -> ClaimDetailOut:
         """The whole claim for its page: form answers, every approval step, every receipt, and the totals once it is submitted."""
-        claim = self._visible_claim(user, claim_no)
+        claim = self.visible_claim(user, claim_no)
         steps = self.db.execute(
             select(Approval, Employee.name).join(Employee, Employee.emp_code == Approval.approver_code)
             .where(Approval.claim_no == claim_no).order_by(Approval.phase, Approval.step)  # 'request' sorts before 'settlement'
