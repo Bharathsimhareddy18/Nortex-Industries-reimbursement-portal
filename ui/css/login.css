@@ -1,0 +1,37 @@
+/* Hallmark · genre: playful · page: login · design-system: design.md · designed-as-app */
+/* Login page only: form on the left, a quiet brand panel on the right. */
+.login { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100dvh; }
+.login-form-side { display: flex; flex-direction: column; gap: 40px; padding: 32px clamp(16px, 6vw, 88px); background: var(--surface); }
+.login-form { display: grid; gap: 16px; width: 100%; max-width: 380px; margin: auto 0; }
+.login-form h1 { font-size: 30px; margin-bottom: 8px; }
+
+.demo { max-width: 380px; font-size: 13.5px; color: var(--muted); }
+.demo summary { cursor: pointer; }
+.demo ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.demo button {
+  display: flex; justify-content: space-between; gap: 12px; width: 100%; padding: 8px 8px;
+  border: 0; border-radius: var(--radius-sm); background: none; cursor: pointer;
+  font: inherit; color: var(--text); text-align: left;
+}
+.demo button:hover { background: var(--surface-2); }
+.demo button span { color: var(--muted); }
+
+.login-visual {
+  position: relative; overflow: hidden; display: grid; align-content: start; gap: 48px; padding: 72px 56px;
+  /* Same studio-light backdrop as the landing page. */
+  background: radial-gradient(100% 80% at 50% 0%, var(--color-surface) 0%, var(--color-sky-soft) 60%, var(--color-blue-soft) 100%);
+  border-left: 1px solid var(--border);
+}
+.login-visual-inner { display: grid; gap: 16px; max-width: 460px; }
+.login-visual h2 { font-size: clamp(30px, 3.2vw, 42px); letter-spacing: -0.045em; line-height: 1.05; }
+.login-visual p { color: var(--muted); font-size: 16px; }
+/* A real screen of the app, tilted and bleeding off the edge like a card on a desk. */
+.login-card img {
+  width: 640px; max-width: none; border-radius: 18px; border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg); transform: rotate(-4deg) translateX(24px);
+}
+
+@media (max-width: 860px) {
+  .login { grid-template-columns: 1fr; }
+  .login-visual { display: none; }
+}

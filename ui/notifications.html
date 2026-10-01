@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notifications · Nortex Travel Claims</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="appbar" id="appbar"></header>
+      <main class="content">
+      <div class="page" style="max-width:920px">
+        <header class="page-head">
+          <div>
+            <h1>Notifications</h1>
+            <p>Messages about your claims, newest first.</p>
+          </div>
+          <button type="button" class="btn btn-ghost" id="refresh"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i>Refresh</button>
+        </header>
+
+        <section class="panel">
+          <div id="list"><div class="panel-pad" style="display:grid;gap:16px">
+            <div class="skeleton" style="width:80%"></div><div class="skeleton" style="width:55%"></div><div class="skeleton" style="width:70%"></div>
+          </div></div>
+        </section>
+      </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/notifications.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Nortex Travel Claims</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <main class="login">
+    <section class="login-form-side">
+      <div style="display:flex;justify-content:space-between;align-items:center"><a href="index.html" class="brand" style="padding:0"><img class="brand-mark" src="assets/logo.svg" width="30" height="30" alt=""><span>Nortex</span></a></div>
+
+      <form id="login-form" class="login-form" novalidate>
+        <div>
+          <h1>Sign in</h1>
+          <p class="muted">Use your Nortex work email.</p>
+        </div>
+
+        <div class="alert" id="login-error" role="alert" hidden></div>
+
+        <div class="field">
+          <label for="email">Work email</label>
+          <input class="input" id="email" name="email" type="email" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+
+        <button class="btn btn-primary btn-lg" type="submit" id="login-button">Sign in</button>
+      </form>
+
+      <!-- Demo only: the API ships with seeded users who share one password. -->
+      <details class="demo">
+        <summary>Demo accounts (password <span class="mono">nortex123</span>)</summary>
+        <ul id="demo-users"></ul>
+      </details>
+    </section>
+
+    <aside class="login-visual" aria-hidden="true">
+      <div class="login-visual-inner">
+        <h2>From trip request to payout, <span class="display-2">in one place.</span></h2>
+        <p>Approvers are told in turn, bills are read for you, and you always know who has your claim.</p>
+      </div>
+      <picture class="login-card">
+        <img src="assets/card-tracker-light.png" alt="">
+      </picture>
+    </aside>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
