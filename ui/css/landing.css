@@ -1,0 +1,84 @@
+/* Hallmark · genre: playful · macrostructure: Narrative Workflow · design-system: design.md · designed-as-app
+ * theme: custom · vibe: "white, blue shades, professional" · paper: oklch(99.2% 0.003 250) · accent: oklch(55% 0.17 257)
+ * display: Bricolage Grotesque · body: Geist · axes: light / geometric-sans / cool
+ * hero: H2 split diptych · features: F4 step sequence · proof: T4 stat strip · nav: N1a · footer: Ft5 · enrichment: real screenshots
+ * Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V4
+ */
+.landing { background: var(--color-paper); }
+.wrap { width: 100%; max-width: 1200px; margin-inline: auto; padding-inline: var(--space-md); }
+
+/* ---- Nav N1a ---------------------------------------------------------------------- */
+.nav-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding-block: var(--space-md); }
+.nav-bar .brand { padding: 0; }
+.nav-links { display: flex; align-items: center; gap: var(--space-md); }
+.nav-text { font-size: var(--text-sm); font-weight: 500; text-decoration: none; color: var(--color-muted); white-space: nowrap; transition: color var(--dur-short) var(--ease-out); }
+.nav-text:hover { color: var(--color-ink); }
+
+/* ---- Hero H2 ---------------------------------------------------------------------- */
+.hero { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); gap: var(--space-xl); align-items: center; padding-block: var(--space-xl) var(--space-2xl); }
+.hero-copy { display: grid; gap: var(--space-md); }
+.hero h1 { font-size: var(--text-display-s); letter-spacing: -0.035em; line-height: 1.02; }
+
+.lede { font-size: var(--text-md); color: var(--color-muted); max-width: 45ch; }
+.hero-actions { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; padding-top: var(--space-2xs); }
+.link-arrow { display: inline-flex; align-items: center; gap: var(--space-2xs); font-weight: 500; text-decoration: none; color: var(--color-ink); border-bottom: 1px solid var(--color-rule-2); padding-bottom: 2px; white-space: nowrap; transition: border-color var(--dur-short) var(--ease-out); }
+.link-arrow:hover { border-color: var(--color-ink); }
+
+/* A real screenshot on a tinted band, hairline only: no fake browser chrome. */
+.hero-shot { margin: 0; padding: var(--space-md) 0 0 var(--space-md); border-radius: var(--radius-band); overflow: hidden; }
+.hero-shot img { width: 100%; height: auto; border-radius: var(--radius-card) 0 0 0; border: 1px solid var(--color-rule-2); border-right: 0; border-bottom: 0; }
+
+/* ---- T4 fact strip ---------------------------------------------------------------- */
+.fact-strip { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-block: 1px solid var(--color-rule); }
+.fact-strip > div { padding: var(--space-md) var(--space-md) var(--space-md) 0; display: grid; gap: var(--space-3xs); }
+.fact-strip > div + div { padding-left: var(--space-md); border-left: 1px solid var(--color-rule); }
+.fact-strip dt { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 600; letter-spacing: -0.03em; white-space: nowrap; }
+.fact-strip dd { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+
+/* ---- F4 stages -------------------------------------------------------------------- */
+.stages { padding-block: var(--space-3xl) var(--space-2xl); }
+.stages-title { font-size: var(--text-display-s); letter-spacing: -0.03em; margin-bottom: var(--space-xl); }
+.stage-list { list-style: none; margin: 0; padding: 0; display: grid; }
+/* Thick rule between stages: the page's divider language. */
+.stage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--space-xl); align-items: start; padding-block: var(--space-xl); border-top: 3px solid var(--color-ink); }
+.stage-text { display: grid; gap: var(--space-xs); align-content: start; }
+.stage-no { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-accent-ink); }
+.stage h3 { font-size: var(--text-xl); letter-spacing: -0.025em; }
+.stage-text p { color: var(--color-muted); max-width: 46ch; }
+.levels { list-style: none; margin: var(--space-2xs) 0 0; padding: 0; display: grid; gap: var(--space-2xs); font-size: var(--text-sm); }
+.levels .mono { display: inline-block; min-width: 2.25rem; font-weight: 500; color: var(--color-accent-ink); }
+
+.stage-shot { margin: 0; padding: var(--space-md) var(--space-md) 0; border-radius: var(--radius-band); overflow: hidden; max-height: 360px; transition: transform var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out); }
+.stage-shot img { width: 100%; height: auto; border-radius: var(--radius-card) var(--radius-card) 0 0; border: 1px solid var(--color-rule-2); border-bottom: 0; }
+.stage-shot:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+
+.stage-note { display: grid; gap: var(--space-2xs); align-content: end; min-height: 220px; padding: var(--space-lg); border-radius: var(--radius-band); }
+.note-big { font-family: var(--font-display); font-size: var(--text-display); font-weight: 600; letter-spacing: -0.04em; line-height: 1; }
+.stage-note p { max-width: 45ch; color: var(--muted); }
+
+/* ---- Footer Ft5 ------------------------------------------------------------------- */
+.closing { padding-block: var(--space-2xl) var(--space-lg); border-top: 3px solid var(--color-ink); }
+.closing-line { font-family: var(--font-display); font-size: var(--text-display-s); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; max-width: 18ch; }
+.closing-foot { display: flex; justify-content: space-between; align-items: center; gap: var(--space-md); flex-wrap: wrap; margin-top: var(--space-xl); font-size: var(--text-sm); color: var(--color-muted); }
+
+/* ---- Reveal: each stage sweeps in once. Off under reduced motion. ---------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal { opacity: 0; transform: translateX(-16px); transition: opacity var(--dur-long) var(--ease-out), transform var(--dur-long) var(--ease-out); }
+  .reveal.is-visible { opacity: 1; transform: none; }
+}
+
+/* ---- Tablet and phone: one column --------------------------------------------------- */
+@media (max-width: 900px) {
+  .hero, .stage { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
+  .fact-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fact-strip > div:nth-child(3) { padding-left: 0; border-left: 0; }
+  .fact-strip > div:nth-child(n+3) { border-top: 1px solid var(--color-rule); }
+}
+@media (max-width: 480px) {
+  .wrap { padding-inline: var(--space-sm); }
+  .nav-text { display: none; }
+  .fact-strip { grid-template-columns: minmax(0, 1fr); }
+  .fact-strip > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--color-rule); }
+  .stages { padding-top: var(--space-2xl); }
+  .stage-note { min-height: 0; }
+}

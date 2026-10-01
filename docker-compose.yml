@@ -1,0 +1,13 @@
+# docker compose up --build     then open http://localhost:8000
+#
+# The Groq key is NOT in the image. It is passed in when the container starts, from either place:
+#   GROQ_API_KEY=your-key docker compose up --build      (typed on the command line)
+#   a .env file next to this one containing the line GROQ_API_KEY=your-key
+# Without a key the app still runs; uploading a receipt then says the key is not set.
+services:
+  nortex:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:-}

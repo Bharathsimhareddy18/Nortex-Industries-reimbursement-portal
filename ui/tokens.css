@@ -1,0 +1,78 @@
+/* Hallmark · design-system tokens · theme: custom · vibe: "white, blue shades, professional"
+ * White does most of the work; blue carries actions, progress and a few tinted cards.
+ * Every colour and font in the app references a token here. Light theme only.
+ */
+:root {
+  /* Paper and ink */
+  --color-paper:      oklch(99.2% 0.003 250);  /* near-white page */
+  --color-paper-2:    oklch(97.2% 0.008 250);  /* one step down, tinted bands */
+  --color-surface:    oklch(99.8% 0.002 250);  /* cards */
+  --color-ink:        oklch(23% 0.03 262);     /* body text, navy-black */
+  --color-ink-2:      oklch(48% 0.18 262);     /* primary buttons: the brand blue */
+  --color-ink-3:      oklch(42% 0.17 262);     /* button hover */
+  --color-muted:      oklch(47% 0.03 258);     /* secondary text, slate */
+  --color-faint:      oklch(52% 0.025 258);    /* placeholders */
+  --color-rule:       oklch(92.5% 0.01 255);   /* dividers */
+  --color-rule-2:     oklch(86.5% 0.018 255);  /* input borders */
+
+  /* Blue shades, used as card fills ("mixed tones") */
+  --color-sky:        oklch(95.5% 0.025 250);  /* palest blue */
+  --color-blue-soft:  oklch(89% 0.05 252);     /* light blue */
+  --color-navy:       oklch(33% 0.1 262);      /* deep navy, takes white text */
+  --color-sky-soft:   oklch(94.5% 0.03 252);   /* active nav, chips */
+  --color-on-tone:    oklch(23% 0.03 262);     /* text on sky / blue-soft */
+  --color-on-tone-2:  oklch(38% 0.04 260);     /* secondary text on sky / blue-soft */
+  --color-on-navy:    oklch(99% 0.005 250);    /* text on navy */
+  --color-on-navy-2:  oklch(86% 0.04 252);     /* secondary text on navy */
+  --color-rule-on-tone: oklch(23% 0.03 262 / 0.12); /* dividers inside a tone */
+  --color-rule-on-navy: oklch(99% 0.005 250 / 0.2);
+
+  /* Accent: blue for progress and "you are here" */
+  --color-accent:     oklch(55% 0.17 257);     /* progress dots, rails */
+  --color-accent-ink: oklch(46% 0.16 260);     /* accent as text */
+  --color-display-2:  oklch(50% 0.18 260);     /* second line of big headings */
+  --color-on-ink:     oklch(99.5% 0.003 250);  /* text on blue buttons */
+  --color-focus:      oklch(55% 0.2 262);      /* focus ring */
+
+  /* Status (warmed to sit with the browns) */
+  --color-info:    oklch(46% 0.15 258);  --color-info-soft:    oklch(95% 0.025 252);
+  --color-warn:    oklch(50% 0.11 70);   --color-warn-soft:    oklch(95.5% 0.045 85);
+  --color-success: oklch(47% 0.12 150);  --color-success-soft: oklch(95.5% 0.04 155);
+  --color-danger:  oklch(50% 0.17 27);   --color-danger-soft:  oklch(95.5% 0.025 25);
+  --color-neutral: oklch(47% 0.03 258);  --color-neutral-soft: oklch(95% 0.01 255);
+  --color-alert:   oklch(55% 0.19 30);   /* bell count */
+  --color-on-alert: oklch(99% 0.01 90);
+
+  /* Type */
+  --font-display: "Bricolage Grotesque", "Geist", system-ui, sans-serif;
+  --font-body:    "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:    "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --text-xs: 0.75rem;  --text-sm: 0.875rem;  --text-base: 0.9375rem; --text-md: 1.0625rem;
+  --text-lg: 1.25rem;  --text-xl: 1.5rem;    --text-2xl: 1.875rem;   --text-3xl: 2.5rem;
+  --text-display-s: clamp(2rem, 3.4vw + 0.5rem, 3.25rem);
+  --text-display:   clamp(2.5rem, 5vw + 0.5rem, 4.5rem);
+
+  /* 4-point spacing scale */
+  --space-3xs: 0.25rem; --space-2xs: 0.5rem; --space-xs: 0.75rem;
+  --space-sm: 1rem;     --space-md: 1.5rem;  --space-lg: 2rem;
+  --space-xl: 3rem;     --space-2xl: 4.5rem; --space-3xl: 7rem;
+
+  /* Shape: pills for actions, 12px cards, 8px inputs */
+  --radius-pill: 999px;
+  --radius-card: 12px;
+  --radius-input: 8px;
+  --radius-band: 24px;
+
+  /* Depth: soft, tinted toward the ink */
+  --shadow-soft: 0 1px 2px oklch(23% 0.03 262 / 0.05), 0 2px 8px oklch(23% 0.03 262 / 0.05);
+  --shadow-lift: 0 8px 24px -10px oklch(48% 0.18 262 / 0.35);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-short: 180ms;
+  --dur-mid: 320ms;
+  --dur-long: 700ms;
+}

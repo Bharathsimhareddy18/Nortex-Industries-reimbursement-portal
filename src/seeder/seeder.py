@@ -11,6 +11,20 @@ CSV_PATH = Path(__file__).resolve().parents[2] / "config" / "employee_master.csv
 PLAIN_COLUMNS = ("emp_code", "name", "email", "designation", "department", "cost_centre", "city", "role")
 
 
+# The one person who is not in the employee master: the admin who can look at everything (read-only). Same login as everyone.
+ADMIN = dict(emp_code="NX-0001", name="Portal Admin", email="admin@nortexindustries.com", designation="System Administrator",
+             department="Administration", cost_centre="CE900", city="Pune", role="Admin")
+
+
+def seed_admin(db: Session) -> int:
+    """Add the admin to the employees table if missing; returns 1 if it was added. Safe to run twice."""
+    if db.get(Employee, ADMIN["emp_code"]):
+        return 0
+    db.add(Employee(**ADMIN))
+    db.commit()
+    return 1
+
+
 def seed_employees(db: Session) -> int:
     """Insert the people who are not in the table yet; returns how many were added. Safe to run twice.
 

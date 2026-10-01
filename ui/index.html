@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nortex Travel Claims</title>
+  <meta name="description" content="Raise a travel request, photograph your bills, and follow every approval until the money reaches you.">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body class="landing">
+  <!-- Nav N1a: only two destinations exist, so only two links. -->
+  <header class="nav-bar wrap">
+    <a href="index.html" class="brand"><img class="brand-mark" src="assets/logo.svg" width="30" height="30" alt=""><span>Nortex</span></a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#stages" class="nav-text">How it works</a>
+      <a href="login.html" class="btn btn-primary btn-sm">Sign in <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero H2: headline and lede left, the real product right. -->
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <h1>Travel claims,<br><span class="display-2">without the paperwork.</span></h1>
+        <p class="lede">Raise a request, photograph your bills, and see who has your claim until the money arrives.</p>
+        <div class="hero-actions">
+          <a href="login.html" class="btn btn-primary btn-lg">Sign in <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+          <a href="#stages" class="link-arrow">See the five stages <i class="ph ph-arrow-down" aria-hidden="true"></i></a>
+        </div>
+      </div>
+      <figure class="hero-shot tone-sky">
+        <img src="assets/card-dashboard-light.png" width="2056" height="1400" alt="The Nortex dashboard: an employee's claims with their status, and the latest notifications.">
+      </figure>
+    </section>
+
+    <!-- T4: only numbers from the Nortex brief and the API rules. Nothing invented. -->
+    <section class="facts wrap" aria-label="Why this exists">
+      <dl class="fact-strip">
+        <div><dt>25-30 min</dt><dd>to fill one settlement form by hand today</dd></div>
+        <div><dt>2 weeks</dt><dd>spent chasing Finance for an update</dd></div>
+        <div><dt>L1-L4</dt><dd>approval levels, chosen from the amount</dd></div>
+        <div><dt>60%</dt><dd>of the estimate is the most an advance can be</dd></div>
+      </dl>
+    </section>
+
+    <!-- F4 step sequence: the claim's real life, one stage per band. -->
+    <section class="stages wrap" id="stages">
+      <h2 class="stages-title">One claim, five stages.<br><span class="display-2">Nobody chases anybody.</span></h2>
+
+      <ol class="stage-list">
+        <li class="stage reveal">
+          <div class="stage-text">
+            <span class="stage-no">1.0 Request</span>
+            <h3>Pick a template, fill a short form.</h3>
+            <p>Travelling, food or a hotel stay. The form is drawn from the template, and you see what happens next before you submit.</p>
+          </div>
+          <figure class="stage-shot tone-blue"><img src="assets/card-request-light.png" loading="lazy" alt="The travel request form with the steps that follow shown above it."></figure>
+        </li>
+
+        <li class="stage reveal">
+          <div class="stage-text">
+            <span class="stage-no">2.0 Approve</span>
+            <h3>Managers decide one after another.</h3>
+            <p>Each approver is told only when it is their turn. The amount picks who has to approve:</p>
+            <ul class="levels">
+              <li><span class="mono">L1</span> up to ₹25,000, Reporting Manager</li>
+              <li><span class="mono">L2</span> up to ₹75,000, + Head of Department</li>
+              <li><span class="mono">L3</span> up to ₹2,00,000, + Head of Division</li>
+              <li><span class="mono">L4</span> above that or abroad, + MD</li>
+            </ul>
+          </div>
+          <figure class="stage-shot tone-sky"><img src="assets/card-inbox-light.png" loading="lazy" alt="A manager's approvals, each claim with approve and reject buttons."></figure>
+        </li>
+
+        <li class="stage reveal">
+          <div class="stage-text">
+            <span class="stage-no">3.0 Advance</span>
+            <h3>Money before you travel, if you asked.</h3>
+            <p>Once every manager has approved, Finance releases the advance and the claim moves on by itself.</p>
+          </div>
+          <div class="stage-note tone-navy">
+            <span class="note-big">60%</span>
+            <p>of the estimated cost, at most. Ask for more and the form tells you straight away.</p>
+          </div>
+        </li>
+
+        <li class="stage reveal">
+          <div class="stage-text">
+            <span class="stage-no">4.0 Settle</span>
+            <h3>Photograph each bill. The amount is read for you.</h3>
+            <p>A hotel invoice claimed as a cab ride is flagged and left out. The same bill twice is caught. You never type an amount.</p>
+          </div>
+          <figure class="stage-shot tone-blue"><img src="assets/card-receipts-light.png" loading="lazy" alt="Three uploaded bills: one counted, one flagged, one caught as a duplicate."></figure>
+        </li>
+
+        <li class="stage reveal">
+          <div class="stage-text">
+            <span class="stage-no">5.0 Paid</span>
+            <h3>Finance verifies, the Controller pays.</h3>
+            <p>You are told when the money is dispatched, or how much comes out of payroll if your bills came in under the advance.</p>
+          </div>
+          <figure class="stage-shot tone-sky"><img src="assets/card-tracker-light.png" loading="lazy" alt="A claim's tracker with request, approval and advance done and settlement next."></figure>
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <!-- Footer Ft5: one closing sentence, then the small print. -->
+  <footer class="closing wrap">
+    <p class="closing-line">Your next trip starts with <span class="display-2">stage 1.0.</span></p>
+    <div class="closing-foot">
+      <a href="login.html" class="link-arrow">Start at stage 1 <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+      <span>Nortex Industries, travel reimbursement</span>
+    </div>
+  </footer>
+
+  <script src="js/landing.js"></script>
+</body>
+</html>

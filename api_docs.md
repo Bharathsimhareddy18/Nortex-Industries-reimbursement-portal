@@ -33,6 +33,7 @@ Password for everyone: `nortex123`.
 | nandita.shah@nortexindustries.com | Nandita Shah | MD | none |
 | ravi.menon@nortexindustries.com | Ravi Menon | Finance (releases advances, verifies claims) | Kavitha |
 | kavitha.balan@nortexindustries.com | Kavitha Balan | Finance, Controller (releases the payout) | Arvind |
+| admin@nortexindustries.com | Portal Admin | Admin (read-only view of everything; code `NX-0001`) | none |
 
 ### Errors
 Every error is JSON:
@@ -366,6 +367,18 @@ Response `200`:
 ```
 An employee with no claims gets `[]`. Only claims the user **raised** are listed (a manager's team claims are not included). `created_at` is UTC.
 
+### Admin endpoints (`/admin/...`)
+Read-only views of **everything**, for the Admin role only. Log in as `admin@nortexindustries.com` like anyone else. Any other user gets `403`, and no headers gets `401`. The admin has no claims of their own, so the normal endpoints return empty lists for them. Templates are not repeated here: the admin uses the same `GET /get_templates` and `GET /get_template_required_fields` as everyone.
+
+| Endpoint | Returns |
+|---|---|
+| `GET /admin/users` | every employee, same shape as `/auth/me` |
+| `GET /admin/claims` | every claim, newest first: `claim_no`, `claimant_code`, `claimant_name`, `template_name`, `level`, `status`, `estimated_amount`, `advance_amount`, `created_at` |
+| `GET /admin/approvals` | every approval step, grouped by claim: `claim_no`, `phase`, `step`, `role`, `action`, `approver_code`, `approver_name`, `decision`, `remarks`, `decided_at` |
+| `GET /admin/notifications` | every notification sent to anyone, newest first: `recipient_code`, `recipient_name`, `claim_no`, `message`, `is_read`, `created_at` |
+
+The admin page in the UI (`admin.html`) shows these as five tabs (Users, Templates, Claims, Approvals, Notifications). Its "Create template" button is a **mock**: it opens a form that saves nothing.
+
 ### `GET /`
 A welcome message, public, no headers. Useful only to check the server is up.
 
@@ -388,5 +401,5 @@ A welcome message, public, no headers. Useful only to check the server is up.
 | return a claim with remarks (send back for correction) | only approve or reject |
 | edit or delete an uploaded receipt | a wrongly flagged receipt stays in the list as excluded |
 | logout | the UI can just forget the token |
-| admin pages (templates, users) | templates are the three fixed ones |
+| creating or editing templates and users | the admin pages are read-only; the 'Create template' button is a mock |
 | policy cuts on amounts | the paid amount is the full bill total: no hotel per-night cap, meal cap, laundry / mini-bar deductions or dinner attendee names |

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · Nortex Travel Claims</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="appbar" id="appbar"></header>
+      <main class="content">
+      <div class="page">
+        <header class="page-head">
+          <div>
+            <h1 id="greeting">Dashboard</h1>
+            <p id="subtitle">&nbsp;</p>
+          </div>
+          <a href="new-request.html" class="btn btn-primary"><i class="ph ph-plus" aria-hidden="true"></i>New request</a>
+        </header>
+
+        <section class="stats" id="stats" aria-label="Summary">
+          <div class="panel stat"><div class="skeleton" style="width:60%"></div><div class="skeleton" style="height:28px;width:40%"></div></div>
+          <div class="panel stat"><div class="skeleton" style="width:60%"></div><div class="skeleton" style="height:28px;width:40%"></div></div>
+          <div class="panel stat"><div class="skeleton" style="width:60%"></div><div class="skeleton" style="height:28px;width:40%"></div></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>My claims</h2>
+            <span class="muted" style="font-size:12.5px">Newest first. Status is live.</span>
+          </div>
+          <div id="claims"></div>
+        </section>
+
+        <div class="dash-split">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Latest notifications</h2>
+              <a href="notifications.html" class="btn btn-ghost btn-sm">View all</a>
+            </div>
+            <div id="latest-notes"><div class="panel-pad"><div class="skeleton"></div></div></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head"><h2>Your details</h2></div>
+            <dl class="facts-grid panel-pad" id="details"></dl>
+          </section>
+        </div>
+      </div>
+      </main>
+    </div>
+  </div>
+
+  <style>
+    /* Dashboard only: notifications get more room than the profile. */
+    .dash-split { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; }
+    @media (max-width: 900px) { .dash-split { grid-template-columns: 1fr; } }
+  </style>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

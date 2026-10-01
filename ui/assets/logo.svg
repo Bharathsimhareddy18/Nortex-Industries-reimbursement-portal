@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Nortex">
+  <!-- Nortex mark: brand-blue tile; the N's diagonal is a light-blue route between two uprights.
+       Colours are the sRGB values of the tokens color-ink-2, color-blue-soft and color-on-ink (an SVG file cannot read CSS variables). -->
+  <rect width="32" height="32" rx="9" fill="#1d54c1"/>
+  <path d="M10.5 22.5V9.5M21.5 22.5V9.5" stroke="#fcfeff" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M10.5 9.5L21.5 22.5" stroke="#c4defc" stroke-width="3.6" stroke-linecap="round"/>
+</svg>

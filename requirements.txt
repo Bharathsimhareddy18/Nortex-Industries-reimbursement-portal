@@ -1,6 +1,3 @@
 fastapi[standard]
 pydantic
-
 sqlalchemy
-pytesseract
-pillow
