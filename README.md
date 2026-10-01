@@ -4,7 +4,11 @@ A web app that takes a business trip from **request** to **payout**: the manager
 
 ## Demo
 
-**▶ [Watch the demo video (3 min 51 s)](video/demo.mp4)**
+<!-- To make GitHub play the video right here: open README.md on github.com, click the pencil, drag video/demo-small.mp4 into the editor,
+     and replace the image line below with the link it generates (github.com/user-attachments/assets/...). -->
+[![Demo video: one claim from request to payout (3 min 51 s). Click to play.](video/thumbnail.png)](video/demo-small.mp4)
+
+*3 min 51 s, no sound. Click the picture to play it (a 6 MB copy). The full-quality recording is [video/demo.mp4](video/demo.mp4).*
 
 **Live app: <https://nortex-reimbursement-production.up.railway.app/>**
 
@@ -154,7 +158,7 @@ ui/            the web pages and their JavaScript
 apis/          the endpoints (thin: they call into src/)
 src/           the logic: claims, approvals, policy (who approves), settlement, ai, auth, admin
 config/        policy numbers (setting.py) and the employee list
-video/         the demo recording
+video/         the demo recording (demo-small.mp4 is the light copy)
 api_docs.md    every endpoint with real example responses
 data_model.md  the tables and the rules behind them
 ```
