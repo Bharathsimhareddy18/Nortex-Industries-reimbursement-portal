@@ -5,6 +5,8 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from config.setting import settings
+from src.auth.auth import hash_password
 from src.database.models import Category, Employee
 
 CSV_PATH = Path(__file__).resolve().parents[2] / "config" / "employee_master.csv"
@@ -20,7 +22,7 @@ def seed_admin(db: Session) -> int:
     """Add the admin to the employees table if missing; returns 1 if it was added. Safe to run twice."""
     if db.get(Employee, ADMIN["emp_code"]):
         return 0
-    db.add(Employee(**ADMIN))
+    db.add(Employee(**ADMIN, password_hash=hash_password(settings.demo_password)))
     db.commit()
     return 1
 
@@ -36,7 +38,7 @@ def seed_employees(db: Session) -> int:
     new_rows = [row for row in rows if row["emp_code"] not in existing]
 
     for row in new_rows:  # pass 1: everyone, without their manager link
-        db.add(Employee(**{col: row[col].strip() or None for col in PLAIN_COLUMNS}))
+        db.add(Employee(**{col: row[col].strip() or None for col in PLAIN_COLUMNS}, password_hash=hash_password(settings.demo_password)))
     db.flush()
 
     for row in new_rows:  # pass 2: link each person to their reporting manager
@@ -117,3 +119,12 @@ def seed_templates(db: Session) -> int:
             changed += 1
     db.commit()
     return changed
+
+
+def seed_passwords(db: Session) -> int:
+    """Give a hashed password to anyone who has none (people saved before passwords existed); returns how many. Safe to run twice."""
+    missing = list(db.scalars(select(Employee).where(Employee.password_hash.is_(None))))
+    for employee in missing:
+        employee.password_hash = hash_password(settings.demo_password)
+    db.commit()
+    return len(missing)

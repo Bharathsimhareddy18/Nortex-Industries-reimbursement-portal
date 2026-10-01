@@ -24,8 +24,10 @@ CREATE TABLE employees (
     cost_centre             VARCHAR(20),
     city                    VARCHAR(50),
     reporting_manager_code  VARCHAR(20) REFERENCES employees(emp_code),   -- NULL for the MD
-    role                    VARCHAR(30)  NOT NULL     -- Employee, Reporting Manager, Head of Department,
-);                                                    -- Head of Division, MD, Finance, Admin
+    role                    VARCHAR(30)  NOT NULL,    -- Employee, Reporting Manager, Head of Department,
+                                                      -- Head of Division, MD, Finance, Admin
+    password_hash           VARCHAR(100)              -- bcrypt hash, never the password
+);
 
 CREATE TABLE categories (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,13 +80,6 @@ CREATE TABLE approvals (                              -- who must decide each ph
     decision       VARCHAR(10) NOT NULL DEFAULT 'pending',   -- pending, approved, returned, rejected
     remarks        VARCHAR(500),
     decided_at     DATETIME
-);
-
-CREATE TABLE sessions (                               -- one row per login
-    token       VARCHAR(64) PRIMARY KEY,              -- random, unguessable; sent with every request
-    emp_code    VARCHAR(20) NOT NULL REFERENCES employees(emp_code),
-    created_at  DATETIME NOT NULL,
-    expires_at  DATETIME NOT NULL                     -- login time + session_hours (config/setting.py)
 );
 
 CREATE TABLE notifications (
@@ -160,11 +155,11 @@ If the claimant is the person assigned to a Finance step, the next Finance user 
 - **Owner only:** upload documents, edit lines, file the settlement.
 - **Admin only:** create users, create and edit categories.
 
-## Login and sessions
+## Login and tokens
 
-`POST /auth/login` takes `{email, password}` (email is matched ignoring case and spaces; the password is the shared `demo_password` in `config/setting.py`). It saves a row in `sessions` and returns `{emp_code, session_token}`. Wrong email and wrong password give the same 401 message.
-Every other endpoint needs two headers: `emp-code` and `session-token`. The session must exist, belong to that `emp_code`, and not be expired. Anything else is a 401, including missing headers.
-No secret key is needed, because tokens are random values looked up in the table. Limits: old sessions are not cleaned up, there is no logout yet, and the token is stored as plain text.
+`employees.password_hash` holds a salted bcrypt hash (never the password). `POST /auth/login` takes `{email, password}` (email matched ignoring case and spaces), checks the hash, and returns `{emp_code, session_token}` where `session_token` is a JWT signed with `JWT_SECRET` (subject = emp_code, expires after `session_hours`). Wrong email and wrong password give the same 401.
+Every other endpoint needs two headers: `emp-code` and `session-token`. The signature and expiry must be valid and the token's subject must equal that `emp_code`. Anything else is a 401, including missing headers.
+Nothing is stored per login, so there is no sessions table. Limits: no logout that revokes a token, every demo user starts with the same password (each has its own salted hash), and without `JWT_SECRET` a restart signs everyone out.
 
 ## API (6 routers, 18 endpoints)
 

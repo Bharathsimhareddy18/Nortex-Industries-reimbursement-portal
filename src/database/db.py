@@ -41,3 +41,9 @@ def create_tables() -> None:
     from src.database import models  # noqa: F401  (importing registers the tables on Base)
 
     Base.metadata.create_all(engine)
+
+    # create_all never alters an existing table, so an older nortex.db gets the new column added here.
+    with engine.begin() as connection:
+        columns = [row[1] for row in connection.exec_driver_sql("PRAGMA table_info(employees)")]
+        if "password_hash" not in columns:
+            connection.exec_driver_sql("ALTER TABLE employees ADD COLUMN password_hash VARCHAR(100)")

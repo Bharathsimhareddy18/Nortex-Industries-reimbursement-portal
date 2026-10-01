@@ -1,3 +1,5 @@
 fastapi[standard]
 pydantic
 sqlalchemy
+bcrypt
+PyJWT

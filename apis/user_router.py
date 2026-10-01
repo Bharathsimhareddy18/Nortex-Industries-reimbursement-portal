@@ -14,12 +14,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=LoginOut)
 def login(body: LoginIn, db: Session = Depends(get_db)):
-    """Exchange email + password for a session token. Every other endpoint needs the returned emp_code and token as headers."""
+    """Exchange email + password for a signed JWT (returned as session_token). Every other endpoint needs the returned emp_code and token as headers."""
     try:
-        session = Auth(db).login(body.email, body.password)
+        employee, token = Auth(db).login(body.email, body.password)
     except AuthError as error:
         raise HTTPException(status_code=401, detail=str(error))
-    return LoginOut(emp_code=session.emp_code, session_token=session.token)
+    return LoginOut(emp_code=employee.emp_code, session_token=token)
 
 
 @router.get("/me", response_model=EmployeeOut)

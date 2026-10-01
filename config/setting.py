@@ -2,6 +2,7 @@
 
 Change a number here (or override it with an environment variable / .env entry) and the whole app follows.
 """
+import secrets
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -79,8 +80,9 @@ class Settings(BaseSettings):
     }
 
     # Demo login: every employee uses this one password (dummy auth). Override with the DEMO_PASSWORD env var.
-    demo_password: str = "nortex123"
-    session_hours: int = 12  # how long a login stays valid
+    demo_password: str = "nortex123"  # only used to fill each person's hashed password when they are seeded
+    jwt_secret: str = secrets.token_urlsafe(32)  # set JWT_SECRET to keep logins valid across restarts; otherwise a new one per start
+    session_hours: int = 12  # how long a JWT stays valid
 
 
 settings = Settings()

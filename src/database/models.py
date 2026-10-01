@@ -1,4 +1,4 @@
-"""The six tables, exactly as in data_model.md."""
+"""The five tables, exactly as in data_model.md."""
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -24,6 +24,7 @@ class Employee(Base):
     city: Mapped[str | None] = mapped_column(String(50))
     reporting_manager_code: Mapped[str | None] = mapped_column(ForeignKey("employees.emp_code"))  # empty for the MD
     role: Mapped[str] = mapped_column(String(30))  # Employee, Reporting Manager, Head of Department, ...
+    password_hash: Mapped[str | None] = mapped_column(String(100))  # bcrypt hash, never the password itself
 
 
 class Category(Base):
@@ -106,14 +107,3 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(String(500))
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-
-
-class UserSession(Base):
-    """A login. The random token is what the browser sends with every request, together with the emp_code."""
-
-    __tablename__ = "sessions"
-
-    token: Mapped[str] = mapped_column(String(64), primary_key=True)
-    emp_code: Mapped[str] = mapped_column(ForeignKey("employees.emp_code"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    expires_at: Mapped[datetime] = mapped_column(DateTime)

@@ -1,50 +1,60 @@
-"""Login and session checking. Dummy auth: one shared demo password, sessions kept in the sessions table."""
-import secrets
+"""Login and token checking. Passwords are stored as bcrypt hashes; a login returns a signed JWT."""
 from datetime import timedelta
 
+import bcrypt
+import jwt
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from config.setting import settings
 from src.database.db import utc_now
-from src.database.models import Employee, UserSession
+from src.database.models import Employee
 
 
 class AuthError(Exception):
-    """Wrong credentials, or a missing, wrong or expired session."""
+    """Wrong credentials, or a missing, wrong or expired token."""
+
+
+def hash_password(password: str) -> str:
+    """Salted one-way hash for the employees table. bcrypt puts a fresh random salt in each hash, so equal passwords never look equal."""
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=10)).decode()
+
+
+# Checked when the email is unknown, so "no such email" takes as long as "wrong password" and timing reveals nothing.
+_DUMMY_HASH = hash_password("not-a-real-password")
 
 
 class Auth:
     def __init__(self, db: Session):
         self.db = db
 
-    def login(self, email: str, password: str) -> UserSession:
-        """Check email + password and open a session. The same error for both mistakes, so nobody can probe which emails exist."""
-        employee = self._find_employee(email)  # the employees row for this email, or None; the row holds the emp_code
-        if employee is None or not self._password_ok(password):
+    def login(self, email: str, password: str) -> tuple[Employee, str]:
+        """Check email + password and return (the employee, a JWT). The same error for both mistakes, so nobody can probe which emails exist."""
+        employee = self._find_employee(email)
+        if employee is None or not self._password_ok(password, employee.password_hash or _DUMMY_HASH):
             raise AuthError("Wrong email or password")
-        return self._new_session(employee.emp_code)  # emp_code is read from that row; the user never types it
+        return employee, self._new_token(employee.emp_code)
 
     def check_session(self, emp_code: str, token: str) -> Employee:
-        """Return the employee behind a session, or raise. The token must exist, belong to this emp_code and not be expired."""
-        session = self.db.get(UserSession, token)
-        if session is None or session.emp_code != emp_code or session.expires_at < utc_now():
+        """Return the employee behind a token, or raise. The signature and expiry must be valid and the token must be for this emp_code."""
+        try:
+            claims = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])  # checks signature and expiry
+        except jwt.PyJWTError:
             raise AuthError("Invalid or expired session, please log in again")
-        return self.db.get(Employee, emp_code)
+        employee = self.db.get(Employee, emp_code)
+        if claims.get("sub") != emp_code or employee is None:
+            raise AuthError("Invalid or expired session, please log in again")
+        return employee
 
     def _find_employee(self, email: str) -> Employee | None:
         """Look the person up by email, ignoring case and stray spaces."""
         return self.db.scalar(select(Employee).where(Employee.email == email.strip().lower()))
 
-    def _password_ok(self, password: str) -> bool:
-        """Compare with the shared demo password in constant time, so response time reveals nothing."""
-        return secrets.compare_digest(password.encode(), settings.demo_password.encode())
+    def _password_ok(self, password: str, password_hash: str) -> bool:
+        """bcrypt compares in constant time and re-hashes with the salt stored inside the hash."""
+        return bcrypt.checkpw(password.encode(), password_hash.encode())
 
-    def _new_session(self, emp_code: str) -> UserSession:
-        """Save a session with a random, unguessable token that expires after settings.session_hours."""
-        session = UserSession(
-            token=secrets.token_urlsafe(32), emp_code=emp_code, expires_at=utc_now() + timedelta(hours=settings.session_hours)
-        )
-        self.db.add(session)
-        self.db.commit()
-        return session
+    def _new_token(self, emp_code: str) -> str:
+        """Sign a JWT whose subject is the emp_code. Nothing is stored: the signature and the expiry (settings.session_hours) are the proof."""
+        expires = utc_now() + timedelta(hours=settings.session_hours)
+        return jwt.encode({"sub": emp_code, "exp": expires}, settings.jwt_secret, algorithm="HS256")

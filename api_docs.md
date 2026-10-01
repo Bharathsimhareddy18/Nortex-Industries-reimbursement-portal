@@ -17,7 +17,7 @@ emp-code: NX-4471
 session-token: XJVwKO4MT5wu_iFyvaVXwl5PvXlKH4BOeyFY1t1wIsQ
 ```
 
-The token must belong to that `emp-code`, otherwise it is a 401. A session lasts 12 hours. On any **401, send the user back to the login page**.
+The token must belong to that `emp-code`, otherwise it is a 401. The token is a JWT and lasts 12 hours. On any **401, send the user back to the login page**.
 The caller's identity always comes from these headers, never from a request body.
 
 ### Demo users
