@@ -199,5 +199,6 @@ This is a working demo, not a finished product. In plain terms:
 
 ## More
 
+- [NOTE.md](NOTE.md): the one-page note: what was built, decisions, and what is not done
 - [api_docs.md](api_docs.md): the full API, with example requests and responses
 - [data_model.md](data_model.md): tables, rules, and decisions
