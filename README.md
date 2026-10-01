@@ -1,3 +1,7 @@
+
+
+
+
 # Nortex travel reimbursement
 
 A web app that takes a business trip from **request** to **payout**: the manager chain approves it by amount, Finance releases the advance, the employee uploads photos of bills, an AI reads each bill and checks it matches what was claimed, and Finance pays out. The employee always sees where the claim is and who has it.
@@ -6,7 +10,8 @@ A web app that takes a business trip from **request** to **payout**: the manager
 
 <!-- To make GitHub play the video right here: open README.md on github.com, click the pencil, drag video/demo-small.mp4 into the editor,
      and replace the image line below with the link it generates (github.com/user-attachments/assets/...). -->
-[![Demo video: one claim from request to payout (3 min 51 s). Click to play.](video/thumbnail.png)](video/demo-small.mp4)
+     
+[![Demo video: one claim from request to payout (3 min 51 s). Click to play.](<img width="2558" height="1403" alt="Pasted image" src="https://github.com/user-attachments/assets/c10888e4-3fe9-49b2-8d97-3efd40d817e8" />)](https://github.com/user-attachments/assets/19169131-5cec-4e95-9df0-0458bff41001)
 
 *3 min 51 s, no sound. Click the picture to play it (a 6 MB copy). The full-quality recording is [video/demo.mp4](video/demo.mp4).*
 
