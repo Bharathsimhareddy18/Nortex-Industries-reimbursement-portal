@@ -7,9 +7,11 @@ from sqlalchemy.orm import Session
 
 from apis.dependencies import require_role
 from src.admin.admin import Admin
+from src.flows.flows import Flows
 from src.database.db import get_db
 from src.pydantic_models.admin import AdminApprovalOut, AdminClaimOut, AdminNotificationOut
 from src.pydantic_models.employee import EmployeeOut
+from src.pydantic_models.flow import AdminTemplateOut, FlowIn
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_role("Admin"))])
 
@@ -36,3 +38,21 @@ def all_approvals(db: Session = Depends(get_db)):
 def all_notifications(db: Session = Depends(get_db)):
     """Every notification sent to anyone, newest first."""
     return Admin(db).notifications()
+
+
+@router.get("/templates", response_model=list[AdminTemplateOut])
+def all_templates(db: Session = Depends(get_db)):
+    """Every template: the three fixed ones with their fields, and the flows an admin built with their steps."""
+    return Flows(db).list_templates()
+
+
+@router.post("/templates", response_model=AdminTemplateOut, status_code=201)
+def create_template(body: FlowIn, db: Session = Depends(get_db)):
+    """Build a new template as a flow of steps (ask for fields, approve, advance, upload bills, finance review, payout)."""
+    return Flows(db).save_template(body)
+
+
+@router.put("/templates/{template_id}", response_model=AdminTemplateOut)
+def change_template(template_id: int, body: FlowIn, db: Session = Depends(get_db)):
+    """Replace the flow of a template an admin built. Claims already raised keep the flow they started with."""
+    return Flows(db).save_template(body, template_id)

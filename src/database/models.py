@@ -45,7 +45,7 @@ class Claim(Base):
     claim_no: Mapped[str] = mapped_column(String(20), primary_key=True)  # TRQ-2026-0001
     employee_code: Mapped[str] = mapped_column(ForeignKey("employees.emp_code"))
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
-    # pending_approval, awaiting_advance, awaiting_settlement, settlement_review, paid, returned, rejected
+    # awaiting_input (flows only), pending_approval, awaiting_advance, awaiting_settlement, settlement_review, paid, returned, rejected
     status: Mapped[str] = mapped_column(String(25))
     level: Mapped[int]  # L1..L4 of the current phase
     details: Mapped[dict] = mapped_column(JSON)  # the request form answers
@@ -53,6 +53,11 @@ class Claim(Base):
     advance_amount: Mapped[Decimal] = mapped_column(Money, default=Decimal("0"), server_default="0")
     payment_date: Mapped[date | None] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    # Claims raised from an admin-built flow carry a frozen copy of it ({"estimate_field", "steps": [...]}), so editing the
+    # template later never changes a claim in progress. current_step is the index of the step the claim is on. Both are
+    # empty for the three fixed templates.
+    flow: Mapped[dict | None] = mapped_column(JSON(none_as_null=True))
+    current_step: Mapped[int] = mapped_column(default=0, server_default="0")
 
 
 class Line(Base):

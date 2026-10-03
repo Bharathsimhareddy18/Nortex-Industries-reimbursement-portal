@@ -17,21 +17,22 @@ from apis.notification_router import router as notification_router
 from apis.settlement_router import router as settlement_router
 from apis.templates_router import router as templates_router
 from apis.user_router import router as user_router
-from src.database.db import SessionLocal, create_tables
 from src.errors import AppError
+from src.resources import Resources
 from src.seeder.seeder import seed_admin, seed_employees, seed_passwords, seed_templates
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    """On every start: make sure the tables exist and the employees and templates are loaded. Safe to repeat, and it means a
-    fresh checkout (or a fresh Docker container) works with no setup step."""
-    create_tables()
-    with SessionLocal() as db:
-        seed_employees(db)
-        seed_admin(db)
-        seed_passwords(db)
-        seed_templates(db)
-    yield
+    """On every start: open the shared resources (database engine, Groq HTTP client), make sure the tables exist and the employees
+    and templates are loaded, then run. Leaving the block closes the resources. Safe to repeat, and it means a fresh checkout
+    (or a fresh Docker container) works with no setup step."""
+    async with Resources() as resources:
+        with resources.session() as db:
+            seed_employees(db)
+            seed_admin(db)
+            seed_passwords(db)
+            seed_templates(db)
+        yield
 
 
 app = FastAPI(lifespan=lifespan)

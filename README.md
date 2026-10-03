@@ -106,6 +106,21 @@ A bill that does not fit is kept as **flagged** and not counted, and the employe
 
 **Claim status** moves through: `pending_approval` → `awaiting_advance` → `awaiting_settlement` → `settlement_review` → `paid` (or `rejected`).
 
+## Build your own flow (admin)
+
+The three templates above are fixed. An admin can also build a new template as a **flow**: open **Admin → Templates → New flow**, drag blocks into order and set each one.
+
+| Block | What it does |
+|---|---|
+| Ask for fields | A form for the employee (text, paragraph, number, amount, date, yes/no, choice). Use it more than once: a later form appears on the claim page when the claim reaches it |
+| Approval | One person, or the claimant's Reporting Manager. Use it as often as you like |
+| Advance | Finance releases an advance (capped at 60% of the estimate when an estimate field is set) |
+| Ask for bills | The employee uploads bills for the heads you allow; the AI reads and checks each one |
+| Finance review | A named person verifies the bills |
+| Payout | A named person releases the money. Always the last step |
+
+A flow is stored as JSON in the template (`categories.config.flow`). When an employee raises a claim, the flow is copied onto the claim (`claims.flow`), so editing a template later never changes a claim already in progress. The claim moves one step at a time (`claims.current_step`); each person step gets its approval row only when the claim reaches it. Nobody acts on their own claim: a step whose person is the claimant is skipped. The code is in `src/flows/flows.py` and the screen is `ui/flow-builder.html`. The three fixed templates keep their amount-based L1 to L4 chain; flows use the people the admin chose.
+
 ## Tech stack
 
 | Part | Choice | Why |
@@ -129,7 +144,7 @@ To make this a full product, these are what I would build next, roughly in this 
 3. **Policy cuts at settlement.** Hotel per-night cap, daily meal cap, laundry and mini-bar lines removed from hotel bills, attendee names for hosted dinners, bills in someone else's name.
 4. **Email receipts.** Read the text receipts in the inbox (cab, e-ticket, hotel folio), not only uploaded photos.
 5. **Workflow gaps.** "Send back with remarks", a second approval on the final amount, the 7-day filing deadline, Finance people raising their own claims, duplicate checks per employee.
-6. **Admin templates for real.** The "Create template" button is a mock today; make it save a new template with its own fields and approval steps.
+6. **Conditions in custom flows.** Admin-built flows are a plain list of steps today; add rules such as "only if the amount is above 50,000" and flows that branch.
 7. **Operations.** More automated tests, logging, and email or chat notifications on top of the in-app ones.
 
 ## Run it locally

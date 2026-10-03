@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.database.db import utc_now
 from src.database.models import Approval, Category, Claim, Employee
 from src.errors import AppError
+from src.flows.flows import Flows, advance_requested
 from src.notifications.notifications import Notifications
 from src.policy.policy import Policy
 from src.pydantic_models.approval import ApproveOut, PendingApprovalOut, RejectOut
@@ -27,6 +28,8 @@ class Approvals:
     def approve(self, user: Employee, claim_no: str) -> ApproveOut:
         """Record `user`'s approval, then move the claim on. Everything is saved together at the end."""
         claim = self._get_claim(claim_no)
+        if claim.flow is not None:
+            return Flows(self.db).approve(user, claim)
         step = self._my_turn(claim, user)
         step.decision, step.decided_at = "approved", utc_now()
         employee = self.db.get(Employee, claim.employee_code)
@@ -46,6 +49,8 @@ class Approvals:
     def reject(self, user: Employee, claim_no: str, remarks: str) -> RejectOut:
         """Reject the claim as `user`. Same rules as approving (it must be their turn), but this ends the claim for good."""
         claim = self._get_claim(claim_no)
+        if claim.flow is not None:
+            return Flows(self.db).reject(user, claim, remarks)
         step = self._my_turn(claim, user)
         step.decision, step.remarks, step.decided_at = "rejected", remarks, utc_now()
         claim.status = "rejected"
@@ -67,11 +72,12 @@ class Approvals:
                  .order_by(Approval.id))
         waiting = []
         for step, claim, template_name, claimant_name in self.db.execute(query):
-            if PHASE_BY_STATUS.get(claim.status) != step.phase or self._first_pending(claim.claim_no, step.phase).id != step.id:
+            # A flow claim has only one waiting step at a time (the next is created when this one is decided), so it is always this person's turn.
+            if claim.flow is None and (PHASE_BY_STATUS.get(claim.status) != step.phase or self._first_pending(claim.claim_no, step.phase).id != step.id):
                 continue  # that stage is over (e.g. rejected), or an earlier approver has not acted yet
             waiting.append(PendingApprovalOut(
                 claim_no=claim.claim_no, claimant_code=claim.employee_code, claimant_name=claimant_name, template_name=template_name,
-                level=claim.level, status=claim.status, estimated_amount=claim.estimated_amount, advance_requested=self._advance(claim), reason=claim.details.get("reason"),
+                level=claim.level, status=claim.status, estimated_amount=claim.estimated_amount, advance_requested=self._advance(claim), reason=Flows(self.db).reason_text(claim) if claim.flow is not None else claim.details.get("reason"),
                 phase=step.phase, role=step.role, action=step.action, created_at=claim.created_at,
             ))
         return waiting
@@ -159,6 +165,8 @@ class Approvals:
 
     def _advance(self, claim: Claim) -> Decimal:
         """The advance the employee asked for (already checked against the 60% cap when the claim was raised)."""
+        if claim.flow is not None:
+            return advance_requested(claim)
         return Decimal(str(claim.details.get("advance_requested", 0)))
 
     def _as_approver(self, step: Approval | None) -> ApproverOut | None:

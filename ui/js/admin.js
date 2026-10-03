@@ -1,5 +1,5 @@
-// Admin: read-only tables of everything. Templates use the same endpoints as every other page.
-// "Create template" is a mock: it opens a form and saves nothing, because the three templates are fixed.
+// Admin: read-only tables of everything, plus the Templates tab, which lists the three built-in templates and the flows
+// built in flow-builder.html (New flow / Edit).
 
 const TABS = [
   { key: "users", label: "Users", icon: "ph-users", load: loadUsers },
@@ -31,14 +31,30 @@ async function loadUsers() {
   ]));
 }
 
+const STEP_NAME = { form: "Ask for fields", approval: "Approval", advance: "Advance", upload_bills: "Ask for bills", finance_review: "Finance review", payout: "Payout" };
+
+// One line saying what a flow step is and who acts on it.
+function describeStep(step, people) {
+  const who = step.approver ? (step.approver.mode === "reporting_manager" ? "claimant's Reporting Manager" : people[step.approver.emp_code] || step.approver.emp_code) : "";
+  const what = step.type === "form" ? step.fields.map((f) => f.label).join(", ") : step.type === "upload_bills" ? step.heads.join(", ") : who;
+  return [escapeHtml(step.type === "form" ? step.title : STEP_NAME[step.type]), `<span class="muted">${escapeHtml(what)}</span>`];
+}
+
 async function loadTemplates() {
-  const templates = await api("/get_templates");
-  const details = await Promise.all(templates.map((t) =>
-    api(`/get_template_required_fields?template_id=${t.template_id}&template_name=${encodeURIComponent(t.template_name)}`)));
-  return details.map((t) => `<div class="template-card">
-      <h3>${escapeHtml(t.template_name)} <span class="muted">· template ${escapeHtml(t.template_id)}</span></h3>
+  const [templates, users] = await Promise.all([api("/admin/templates"), api("/admin/users")]);
+  const people = Object.fromEntries(users.map((u) => [u.emp_code, u.name]));
+  return templates.map((t) => t.kind === "fixed"
+    ? `<div class="template-card">
+      <h3>${escapeHtml(t.name)} <span class="muted">· built-in template ${escapeHtml(t.id)}</span></h3>
       ${table(["Field", "Key", "Type", "Required"], t.fields.map((f) => [
         escapeHtml(f.label), mono(f.name), escapeHtml(f.type), f.required ? badge("Required", "badge-accent") : badge("Optional")]))}
+    </div>`
+    : `<div class="template-card">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <span>${escapeHtml(t.name)} <span class="muted">· custom flow ${escapeHtml(t.id)}</span></span>
+        <a class="btn btn-ghost btn-sm" href="flow-builder.html?template=${encodeURIComponent(t.id)}"><i class="ph ph-pencil-simple" aria-hidden="true"></i>Edit</a>
+      </h3>
+      ${table(["Step", "Block", "Details"], t.flow.steps.map((s, i) => [String(i + 1), ...describeStep(s, people)]))}
     </div>`).join("");
 }
 
@@ -103,15 +119,5 @@ async function loadNotifications() {
     if (button) show(button.dataset.tab);
   });
 
-  // The mock "Create template" form: nothing is sent anywhere.
-  const dialog = document.getElementById("mock-dialog");
-  const note = document.getElementById("mock-note");
-  createButton.addEventListener("click", () => { note.hidden = true; dialog.showModal(); });
-  document.getElementById("mock-close").addEventListener("click", () => dialog.close());
-  document.getElementById("mock-form").addEventListener("submit", (event) => {
-    event.preventDefault();
-    note.hidden = false;
-  });
-
-  show("users");
+  show(location.hash === "#templates" ? "templates" : "users");
 })();

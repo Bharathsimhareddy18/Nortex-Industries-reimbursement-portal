@@ -7,14 +7,16 @@ const claimNo = new URLSearchParams(location.search).get("claim");
 let me = null;
 let claim = null;      // the last GET /get_claim answer
 let claimNotes = [];   // this claim's notifications, fetched once
+let myStep = null;     // the step waiting on ME for this claim (from GET /get_pending_approvals), or null
 
 (async function () {
+  if (document.body.dataset.page) return; // claim-form / claim-bills / claim-decision start themselves (claim-actions.js)
   me = await startPage("claims");
   if (!claimNo) {
     showList();
     return;
   }
-  const [detail, notes] = await Promise.allSettled([loadClaim(), api("/get_all_notifications")]);
+  const [detail, notes] = await Promise.allSettled([loadClaim(), api("/get_all_notifications"), loadMyStep()]);
   if (detail.status === "rejected") {
     showNotAllowed(detail.reason); // 403 not involved, 404 no such claim
     return;
@@ -23,18 +25,16 @@ let claimNotes = [];   // this claim's notifications, fetched once
   drawClaim();
 })();
 
-async function loadClaim() {
-  claim = await api("/get_claim?claim_no=" + encodeURIComponent(claimNo));
+async function loadMyStep() {
+  try {
+    myStep = (await api("/get_pending_approvals")).find((p) => p.claim_no === claimNo) || null;
+  } catch {
+    myStep = null; // no buttons if the queue cannot be read; the Approvals page still works
+  }
 }
 
-// After an upload or a submit: read the claim again, then redraw.
-async function reloadAndDraw() {
-  try {
-    await loadClaim();
-  } catch {
-    // Keep the last copy; the next page load will show the change.
-  }
-  drawClaim();
+async function loadClaim() {
+  claim = await api("/get_claim?claim_no=" + encodeURIComponent(claimNo));
 }
 
 // ---- The list ---------------------------------------------------------------------------
@@ -82,8 +82,8 @@ async function showList() {
 
 // ---- One claim --------------------------------------------------------------------------
 function drawClaim() {
-  const summary = [claim.template_name, formatMoney(claim.estimated_amount), "Level L" + claim.level, "Raised " + formatDateTime(claim.created_at)]
-    .map(escapeHtml).join(", ");
+  const summary = [claim.template_name, Number(claim.estimated_amount) > 0 && formatMoney(claim.estimated_amount), claim.level > 0 && "Level L" + claim.level, "Raised " + formatDateTime(claim.created_at)]
+    .filter(Boolean).map(escapeHtml).join(", ");
   const by = isMine() ? "" : `<p class="claim-sub">Raised by ${escapeHtml(claim.claimant_name)}</p>`;
 
   content.innerHTML = `
@@ -96,14 +96,16 @@ function drawClaim() {
       <a href="claims.html" class="btn btn-ghost"><i class="ph ph-arrow-left" aria-hidden="true"></i>All claims</a>
     </header>
 
+    ${nextActionHtml()}
+
     ${reasonHtml()}
 
     <article class="panel claim-card">
       ${progressSection()}
-      ${canSettle() ? `<section id="settlement">${settlementHtml(claim)}</section>` : waitingHtml()}
+      ${showSummary() ? `<section id="settlement">${settlementHtml(claim)}</section>` : waitingHtml()}
     </article>
 
-    ${canSettle() ? "" : billsHtml()}
+    ${showSummary() ? "" : billsHtml()}
 
     <div class="claim-grid">
       <section class="panel">
@@ -116,7 +118,6 @@ function drawClaim() {
       </section>
     </div>`;
 
-  if (canSettle()) wireSettlement(claimNo, reloadAndDraw);
   hydrateThumbnails(claim.receipts); // the photos of the bills, for the owner, the approvers and Finance alike
 }
 
@@ -148,15 +149,32 @@ function hasAdvance() {
   return Number(claim.advance_requested) > 0;
 }
 
-// Bills can be filed by the owner once the claim is fully approved (and any advance released).
-// Once submitted, the section stays to show the totals.
-function canSettle() {
-  return isMine() && (claim.status === "awaiting_settlement" || Boolean(claim.totals));
+// Once the settlement is submitted, the owner's claim page keeps its summary (bills, totals, who has it).
+function showSummary() {
+  return isMine() && Boolean(claim.totals);
+}
+
+// What this person can do next on this claim. Each action has its own page; this page only points to it.
+function nextActionHtml() {
+  const card = (title, text, href, label) => `<section class="panel panel-pad" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+      <div><strong>${escapeHtml(title)}</strong><p class="muted" style="margin:4px 0 0">${escapeHtml(text)}</p></div>
+      <a class="btn btn-primary" href="${href}${encodeURIComponent(claimNo)}">${escapeHtml(label)}</a></section>`;
+  if (myStep) return card("Waiting for your decision", "Read the details and the bills, then decide.", "claim-decision.html?claim=", "Review and decide");
+  if (needsMyForm()) return card("Next: " + claim.flow.form_title, "Your claim is waiting for you to fill in this form.", "claim-form.html?claim=", "Fill in the form");
+  if (isMine() && claim.status === "awaiting_settlement" && !claim.totals) {
+    return card("Upload your bills", "Each bill is read and checked, then you send them to be settled.", "claim-bills.html?claim=", "Upload bills");
+  }
+  return "";
 }
 
 // The first step still waiting, in a phase ("request" or "settlement").
 function pendingStep(phase) {
-  return claim.approvals.find((a) => a.phase === phase && a.decision === "pending") || null;
+  return claim.approvals.find((a) => (a.phase === phase || a.phase === "flow") && a.decision === "pending") || null;
+}
+
+// ---- A later form step of an admin-built flow (filled on its own page, claim-form.html) ------
+function needsMyForm() {
+  return isMine() && claim.status === "awaiting_input" && claim.flow && claim.flow.form_fields;
 }
 
 // Before approval: say who the claim is waiting for instead of showing an upload that would be refused.
@@ -165,6 +183,7 @@ function waitingHtml() {
   const text = {
     pending_approval: next ? `Waiting for ${next.name} (${next.role}). You can upload bills once every approver has said yes.` : "Waiting for approval.",
     awaiting_advance: `Approved. Waiting for ${next ? next.name : "Finance"} to release your advance; bill upload opens after that.`,
+    awaiting_input: isMine() ? "" : `Waiting for ${claim.claimant_name} to fill in the next form.`,
     settlement_review: "The bills are with Finance.",
     paid: "Paid and closed.",
   }[claim.status];
@@ -187,7 +206,9 @@ const STEP_ACTION = { approve: "Approve", release_advance: "Release advance", ve
 function progressSection() {
   const rejected = claim.approvals.find((a) => a.decision === "rejected");
   const current = STEP_FOR_STATUS[claim.status] ?? 1;
-  const steps = claim.status === "rejected" ? "" : trackerHtml(claimSteps(claim.template_name).map((step, i) => {
+  const steps = claim.status === "rejected" ? "" : claim.flow ? flowTrackerHtml(claim.flow.steps.map((s, i) => ({
+    ...s, note: i === 0 ? formatDateTime(claim.created_at) : s.state === "done" ? "Done" : s.state === "current" ? flowNote(s) : s.who || "",
+  }))) : trackerHtml(claimSteps(claim.template_name).map((step, i) => {
     const state = i < current ? "is-done" : i === current ? "is-current" : "";
     let note = i < current ? "Done" : i === current ? currentNote(i) : step.later;
     if (i === 0) note = formatDateTime(claim.created_at);
@@ -215,6 +236,13 @@ function progressSection() {
         <div class="chain">${chain}</div>
       </div>` : ""}
     </section>`;
+}
+
+// What the step in progress is waiting for, in words.
+function flowNote(step) {
+  if (step.type === "form") return isMine() ? "Waiting for you" : "Waiting for " + claim.claimant_name;
+  if (step.type === "upload_bills") return "Bills to be filed";
+  return step.who ? "Waiting for " + step.who : "Waiting";
 }
 
 function currentNote(step) {
@@ -246,13 +274,13 @@ function fieldValue(value) {
 
 function factsHtml() {
   const rows = [
-    ["Approval level", "L" + claim.level],
-    ["Estimate", `<span class="mono">${formatMoney(claim.estimated_amount)}</span>`],
+    claim.level > 0 ? ["Approval level", "L" + claim.level] : null,
+    Number(claim.estimated_amount) > 0 ? ["Estimate", `<span class="mono">${formatMoney(claim.estimated_amount)}</span>`] : null,
     // Only mention the advance when there is one.
     hasAdvance() ? ["Advance asked", `<span class="mono">${formatMoney(claim.advance_requested)}</span>`] : null,
     hasAdvance() ? ["Advance released", `<span class="mono">${formatMoney(claim.advance_amount)}</span>`] : null,
     ...Object.entries(claim.fields || {})
-      .filter(([name]) => !["advance_requested", "estimated_trip_cost", "amount", "reason"].includes(name))
+      .filter(([name]) => claim.flow || !["advance_requested", "estimated_trip_cost", "amount", "reason"].includes(name))
       .map(([name, value]) => [escapeHtml(name.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase())), escapeHtml(fieldValue(value))]),
   ].filter(Boolean);
   return `<dl class="facts-grid">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;

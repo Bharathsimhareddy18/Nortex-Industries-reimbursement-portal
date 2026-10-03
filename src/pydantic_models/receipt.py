@@ -53,4 +53,4 @@ class SubmitOut(BaseModel):
     advance: Decimal
     payable: Decimal  # to be paid to the employee
     recoverable: Decimal  # to be deducted from the employee's payroll
-    next_approver: ApproverOut  # the first Finance person
+    next_approver: ApproverOut | None  # the first Finance person (None if a flow goes on to something else)

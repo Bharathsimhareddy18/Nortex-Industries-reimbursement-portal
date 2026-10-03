@@ -25,7 +25,7 @@ function drawSidebar(me, activeKey) {
     { key: "claims", href: "claims.html", icon: "ph-files", label: "Claims" },
     { key: "new", href: "new-request.html", icon: "ph-plus-circle", label: "New request" },
     // Approvals are things to DO (the queue); notifications are things to READ (the message list).
-    ...(isApprover(me.role) ? [{ key: "approvals", href: "approvals.html", icon: "ph-check-square-offset", label: "Approvals" }] : []),
+    ...([{ key: "approvals", href: "approvals.html", icon: "ph-check-square-offset", label: "Approvals" }]),
     { key: "notifications", href: "notifications.html", icon: "ph-bell", label: "Notifications" },
   ];
 

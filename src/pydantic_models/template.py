@@ -22,4 +22,5 @@ class FieldOut(BaseModel):
 class TemplateFieldsOut(BaseModel):
     template_id: int
     template_name: str
-    fields: list[FieldOut]
+    fields: list[FieldOut]  # the form to fill when raising the request (for a flow: its first form step)
+    steps: list[dict] | None = None  # flow templates only: [{"type", "title"}] so the page can show what happens next

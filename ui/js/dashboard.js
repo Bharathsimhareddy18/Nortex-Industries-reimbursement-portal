@@ -78,7 +78,7 @@ function drawClaims(claims) {
       <td>${c.created_at ? formatDateTime(c.created_at) : "-"}</td>
       <td>${statusBadge(c.status)}</td>
       <td><div class="actions">
-        <a class="btn ${c.status === "awaiting_settlement" ? "btn-primary" : "btn-ghost"} btn-sm" href="claims.html?claim=${encodeURIComponent(c.claim_no)}">${c.status === "awaiting_settlement" ? "File settlement" : "Open"}</a>
+        <a class="btn ${c.status === "awaiting_settlement" ? "btn-primary" : "btn-ghost"} btn-sm" href="${c.status === "awaiting_settlement" ? "claim-bills.html" : "claims.html"}?claim=${encodeURIComponent(c.claim_no)}">${c.status === "awaiting_settlement" ? "File settlement" : "Open"}</a>
       </div></td>
     </tr>`).join("");
   box.innerHTML = `<div class="table-wrap"><table class="table">

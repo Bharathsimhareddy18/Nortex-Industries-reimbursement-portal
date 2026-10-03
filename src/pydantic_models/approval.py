@@ -12,7 +12,7 @@ from src.pydantic_models.claim import ApproverOut, ClaimStatus
 class ApprovalOut(RowModel):
     id: int
     claim_no: str
-    phase: Literal["request", "settlement"]
+    phase: Literal["request", "settlement", "flow"]
     step: int  # order within the phase
     role: str
     action: Literal["approve", "release_advance", "verify", "release_payment"]
@@ -54,7 +54,7 @@ class PendingApprovalOut(BaseModel):
     estimated_amount: Decimal
     advance_requested: Decimal  # what the claimant asked for, 0 if nothing
     reason: str | None  # what the money is for and why, in the claimant's words
-    phase: Literal["request", "settlement"]
+    phase: Literal["request", "settlement", "flow"]
     role: str  # the role this step is for
     action: Literal["approve", "release_advance", "verify", "release_payment"]  # what the user is being asked to do
     created_at: datetime  # when the claim was raised

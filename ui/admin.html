@@ -22,7 +22,7 @@
         <header class="page-head">
           <div>
             <h1>Admin</h1>
-            <p>Everyone, every template, every claim, approval and notification. Read-only.</p>
+            <p>Everyone, every template, every claim, approval and notification. Read-only, except that you build templates here.</p>
           </div>
         </header>
 
@@ -31,9 +31,9 @@
         <section class="panel">
           <div class="panel-head">
             <h2 id="tab-title">Users</h2>
-            <button type="button" class="btn btn-primary btn-sm" id="create-template" hidden>
-              <i class="ph ph-plus" aria-hidden="true"></i>Create template
-            </button>
+            <a class="btn btn-primary btn-sm" id="create-template" href="flow-builder.html" hidden>
+              <i class="ph ph-plus" aria-hidden="true"></i>New flow
+            </a>
           </div>
           <div id="tab-content"><div class="panel-pad"><div class="skeleton"></div></div></div>
         </section>
@@ -41,23 +41,6 @@
       </main>
     </div>
   </div>
-
-  <!-- Mock only: this form saves nothing. The three templates are fixed in this version. -->
-  <dialog id="mock-dialog" aria-labelledby="mock-title">
-    <form method="dialog" id="mock-form" class="mock-form">
-      <h2 id="mock-title">Create template</h2>
-      <p class="muted">Mock screen. Nothing is saved: the three templates are fixed in this version.</p>
-      <label for="mock-name">Template name</label>
-      <input class="input" id="mock-name" placeholder="e.g. International travel">
-      <label for="mock-fields">Fields (one per line)</label>
-      <textarea class="textarea" id="mock-fields" rows="4" placeholder="Destination&#10;Passport number&#10;Estimated cost"></textarea>
-      <div class="alert alert-info" id="mock-note" hidden>Demo only: this template was not saved.</div>
-      <div class="actions">
-        <button type="button" class="btn btn-ghost" id="mock-close">Close</button>
-        <button type="submit" class="btn btn-primary">Create</button>
-      </div>
-    </form>
-  </dialog>
 
   <style>
     /* Admin tables are wide: codes, badges and names stay on one line, and the table scrolls sideways instead of clipping. */
@@ -67,11 +50,6 @@
     .template-card { border: 1px solid var(--line, #e5e7eb); border-radius: 10px; margin: 16px; overflow: hidden; }
     .template-card h3 { margin: 0; padding: 12px 16px; font-size: 15px; }
     .template-card .table-wrap { border-top: 1px solid var(--line, #e5e7eb); }
-    dialog { border: 1px solid var(--line, #e5e7eb); border-radius: 12px; padding: 0; width: min(440px, 92vw); }
-    dialog::backdrop { background: rgba(15, 23, 42, .45); }
-    .mock-form { display: grid; gap: 10px; padding: 20px; }
-    .mock-form h2, .mock-form p { margin: 0; }
-    .mock-form .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
   </style>
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>

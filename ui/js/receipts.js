@@ -52,7 +52,7 @@ function settlementHtml(claim) {
         <div class="field">
           <label for="head">What is this bill for?<span class="req">*</span></label>
           <select class="select" id="head" required>
-            <option value="">Select…</option>${headsFor(claim.template_name).map((h) => `<option>${h}</option>`).join("")}
+            <option value="">Select…</option>${(claim.flow && claim.flow.heads ? claim.flow.heads : headsFor(claim.template_name)).map((h) => `<option>${h}</option>`).join("")}
           </select>
           <span class="help">The amount is read from the bill. You never type it.</span>
         </div>

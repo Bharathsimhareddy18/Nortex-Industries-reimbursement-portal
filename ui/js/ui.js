@@ -27,6 +27,7 @@ function formatDateTime(isoString) {
 const STATUS = {
   pending_approval: { label: "Awaiting approval", tone: "info" },
   awaiting_advance: { label: "Awaiting advance", tone: "warn" },
+  awaiting_input: { label: "Needs your input", tone: "accent" },
   awaiting_settlement: { label: "Upload receipts", tone: "accent" },
   settlement_review: { label: "With Finance", tone: "neutral" },
   paid: { label: "Paid", tone: "success" },
@@ -78,6 +79,21 @@ const ADVANCE_STEP = 2;
 
 // Which step is in progress for each status. "paid" is past the last step, so all are done.
 const STEP_FOR_STATUS = { pending_approval: 1, awaiting_advance: 2, awaiting_settlement: 3, settlement_review: 4, paid: 6 };
+
+// Admin-built flows: one icon per kind of step, and a tracker drawn from the flow's own steps.
+// steps: [{ type, title, who, state: "done" | "current" | "pending", note }]
+const FLOW_ICON = {
+  form: "ph-file-text", approval: "ph-user-check", advance: "ph-hand-coins",
+  upload_bills: "ph-receipt", finance_review: "ph-magnifying-glass", payout: "ph-paper-plane-tilt",
+};
+
+function flowTrackerHtml(steps) {
+  return trackerHtml(steps.map((s) => ({
+    title: escapeHtml(s.title), icon: FLOW_ICON[s.type] || "ph-circle",
+    note: escapeHtml(s.note ?? (s.who && s.state !== "done" ? s.who : "")),
+    state: s.state === "done" ? "is-done" : s.state === "current" ? "is-current" : "",
+  })));
+}
 
 // steps: [{ title, icon, note, state }] where state is "", "is-done" or "is-current".
 function trackerHtml(steps) {

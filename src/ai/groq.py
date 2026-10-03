@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from config.setting import settings
 from src.errors import AppError
+from src.resources import Resources
 from src.pydantic_models.receipt import ClaimCheck, ReceiptData
 
 
@@ -47,7 +48,7 @@ class Groq:
             "response_format": {"type": "json_object"}, "temperature": 0,
         }
         try:
-            reply = httpx.post(settings.groq_url, json=body, headers={"Authorization": f"Bearer {settings.groq_api_key}"}, timeout=90)
+            reply = Resources.get().http.post(settings.groq_url, json=body, headers={"Authorization": f"Bearer {settings.groq_api_key}"})  # the shared client
             reply.raise_for_status()
             return reply.json()["choices"][0]["message"]["content"]
         except (httpx.HTTPError, KeyError, IndexError) as error:

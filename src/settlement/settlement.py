@@ -10,6 +10,7 @@ from src.ai.groq import Groq
 from src.claims.claims import Claims
 from src.database.models import Approval, Category, Claim, Employee, Line
 from src.errors import AppError
+from src.flows.flows import Flows
 from src.notifications.notifications import Notifications
 from src.policy.policy import Policy
 from src.pydantic_models.claim import ApproverOut
@@ -31,6 +32,8 @@ class Settlement:
     def upload_receipt(self, user: Employee, claim_no: str, head: Head, filename: str, data: bytes) -> ReceiptOut:
         """Take one receipt image: read it (OCR), check it is not a repeat, check it fits what was claimed, save the result."""
         claim = self._get_claim(user, claim_no, "awaiting_settlement")
+        if claim.flow is not None:
+            Flows(self.db).check_head(claim, head)
         mime = self._image_type(data)
         receipt = self.ai.read_receipt(data, mime)
         path = self._save_file(claim_no, filename, data)
@@ -140,6 +143,11 @@ class Settlement:
         totals = self.policy.totals(claim_no, claim.advance_amount)
         if totals["paid_by_employee"] <= 0:
             raise AppError(422, "Upload at least one receipt that matches its claimed head before submitting")
+        if claim.flow is not None:  # an admin-built flow decides what comes after the bills
+            next_approver = Flows(self.db).finish_bills(claim)
+            self.db.commit()
+            return SubmitOut(claim_no=claim_no, status=claim.status, paid_by_employee=totals["paid_by_employee"], advance=totals["advance"],
+                             payable=totals["payable"], recoverable=totals["recoverable"], next_approver=next_approver)
         steps = self._finance_steps(claim)
         for number, step in enumerate(steps, start=1):
             self.db.add(Approval(claim_no=claim_no, phase="settlement", step=number, role="Finance", action=step["action"], approver_code=step["emp_code"]))

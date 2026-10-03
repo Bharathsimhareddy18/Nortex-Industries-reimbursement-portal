@@ -38,19 +38,23 @@ class Templates:
 
         Returns the cleaned values (numbers, dates and so on in a JSON-safe form), ready to store on the claim.
         """
+        return self.clean_step(template.config["fields"], fields, template.name)
+
+    def clean_step(self, field_defs: list[dict], fields: dict, name: str) -> dict:
+        """The same check for one form: the template's own fields, or one form step of an admin-built flow."""
         try:
-            return self._build_model(template)(**fields).model_dump(mode="json")
+            return self._build_model(name, field_defs)(**fields).model_dump(mode="json")
         except ValidationError as error:
             problems = [f"{'.'.join(str(p) for p in e['loc']) or 'fields'}: {e['msg']}" for e in error.errors()]
             raise AppError(422, "Some fields are missing or invalid", problems)
 
-    def _build_model(self, template: Category):
-        """Turn the template's field list into a Pydantic model, so Pydantic does the checking."""
+    def _build_model(self, name: str, field_defs: list[dict]):
+        """Turn a field list into a Pydantic model, so Pydantic does the checking."""
         definitions = {}
-        for field in template.config["fields"]:
+        for field in field_defs:
             annotation = self._annotation(field)
             definitions[field["name"]] = (annotation, ... if field["required"] else field.get("default"))
-        return create_model(template.name.replace(" ", ""), __config__=ConfigDict(extra="forbid"), **definitions)
+        return create_model(name.replace(" ", ""), __config__=ConfigDict(extra="forbid"), **definitions)
 
     def _annotation(self, field: dict):
         """The Python type (with limits) for one field type."""

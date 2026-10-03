@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from src.database.models import Approval, Category, Claim, Employee, Line
 from src.errors import AppError
+from src.flows.flows import Flows, advance_requested
 from src.notifications.notifications import Notifications
 from src.policy.policy import Policy
 from src.pydantic_models.claim import ClaimDetailOut, DetailApprovalOut, DetailReceiptOut, DetailTotalsOut
@@ -23,6 +24,8 @@ class Claims:
     def create(self, employee: Employee, template_id: int, fields: dict) -> tuple[Claim, list[tuple[str, Employee]]]:
         """Raise a claim for `employee` and tell the approvers. Each step is one small method below; everything is saved in one go."""
         template = self.templates.get(template_id)
+        if "flow" in template.config:  # an admin-built flow: its own engine walks the steps
+            return Flows(self.db).create_claim(employee, template, fields, self._next_claim_no())
         clean = self.templates.clean_fields(template, fields)
         amount = self.policy.estimated_amount(template.name, clean)
         self.policy.check_advance(amount, Decimal(str(clean.get("advance_requested", 0))))
@@ -71,13 +74,20 @@ class Claims:
         return ClaimDetailOut(
             claim_no=claim_no, claimant_code=claim.employee_code, claimant_name=self.db.get(Employee, claim.employee_code).name,
             template_name=self.db.get(Category, claim.category_id).name, status=claim.status, level=claim.level,
-            estimated_amount=claim.estimated_amount, advance_requested=Decimal(str(claim.details.get("advance_requested", 0))).quantize(Decimal("0.01")),
+            estimated_amount=claim.estimated_amount, advance_requested=self._advance_requested(claim).quantize(Decimal("0.01")),
             advance_amount=claim.advance_amount, created_at=claim.created_at, fields=claim.details,
             approvals=[DetailApprovalOut(name=name, role=a.role, phase=a.phase, step=a.step, action=a.action, decision=a.decision,
                                          remarks=a.remarks, decided_at=a.decided_at) for a, name in steps],
             receipts=[self._receipt(line) for line in lines],
-            totals=self._totals(claim) if any(a.phase == "settlement" for a, _ in steps) else None,
+            totals=self._totals(claim) if any(a.phase == "settlement" or a.action in ("verify", "release_payment") for a, _ in steps) else None,
+            flow=Flows(self.db).view(claim) if claim.flow is not None else None,
         )
+
+    def _advance_requested(self, claim: Claim) -> Decimal:
+        """What the claim asked as an advance: the fixed templates keep it in details, a flow in the field its advance step names."""
+        if claim.flow is not None:
+            return advance_requested(claim)
+        return Decimal(str(claim.details.get("advance_requested", 0)))
 
     def _receipt(self, line: Line) -> DetailReceiptOut:
         """One saved line as a receipt. The merchant is what the AI read from the image."""

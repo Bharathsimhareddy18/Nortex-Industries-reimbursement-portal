@@ -27,7 +27,8 @@ Advance capped at 60% of the estimate and reconciled at settlement; duplicate bi
 - **Duplicate check spans all employees.** A Finance person's own claim would stall.
 - **Everyone shares one demo password**, and there is no rate limit or token revocation.
 - **Data is not kept across a redeploy** (SQLite inside the container).
-- Only a few automated tests (the login guard).
+- Only a few automated tests (the login guard and the custom-flow path).
+- Custom flows are a straight list: no conditions or branches yet, and the three built-in templates stay on the amount-based chain rather than being flows.
 
 ## Next
 

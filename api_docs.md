@@ -138,6 +138,13 @@ Response `200`:
   { "template_id": 3, "template_name": "Hotel stay" } ]
 ```
 
+### Custom flows
+Templates built by an admin appear in `GET /get_templates` like the built-in ones. For a flow template, `get_template_required_fields` returns the fields of its first form and an extra `steps` list (`[{type, title}]`) for showing what happens next. `create_claim` works as usual (`level` is 0 and `estimated_amount` is 0 unless the flow names an estimate field; `approvers` lists everyone who will act, in order). A new status `awaiting_input` means the claim waits for the employee to fill a later form: `get_claim` then returns a `flow` object (`steps` with `state` done/current/pending, plus `form_title` and `form_fields` for the form due, or `heads` while bills are due), and the employee sends the answers to:
+
+`POST /submit_step` with `{ "claim_no": "TRQ-2026-0003", "fields": { "po_number": "PO-7781" } }` returns `{ "claim_no", "status" }`.
+
+Admin only: `GET /admin/templates` (all templates; flows include their steps), `POST /admin/templates` and `PUT /admin/templates/{id}` with `{ "name", "estimate_field", "steps": [...] }`. A flow that breaks a rule is a `422` whose `problems` lists each one. See data_model.md for the step shapes.
+
 ### `GET /get_template_required_fields?template_id=1&template_name=Travelling`
 The fields of one template, so the form can be drawn from data. **Screen: the request form.** The id and the name must both match, otherwise `404`.
 

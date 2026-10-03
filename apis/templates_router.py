@@ -6,6 +6,7 @@ from apis.dependencies import current_user
 from src.database.db import get_db
 from src.database.models import Employee
 from src.pydantic_models.template import TemplateFieldsOut, TemplateOut
+from src.flows.flows import Flows
 from src.templates.templates import Templates
 
 router = APIRouter(tags=["templates"])
@@ -23,4 +24,7 @@ def get_template_required_fields(
 ):
     """The fields to show on the form for one template. The id and the name must both match, otherwise 404."""
     template = Templates(db).required_fields(template_id, template_name)
+    if "flow" in template.config:  # an admin-built flow: the request form is its first step
+        steps = template.config["flow"]["steps"]
+        return TemplateFieldsOut(template_id=template.id, template_name=template.name, fields=steps[0]["fields"], steps=Flows(db).preview(steps))
     return TemplateFieldsOut(template_id=template.id, template_name=template.name, fields=template.config["fields"])

@@ -92,6 +92,13 @@ CREATE TABLE notifications (
 );
 ```
 
+## Custom flows (admin-built templates)
+
+A template can be a flow: `categories.config = {"flow": {"estimate_field": "budget" | null, "steps": [...]}}`. Steps are `form` (title, fields), `approval` (approver), `advance` (approver, amount_field), `upload_bills` (heads), `finance_review` (approver) and `payout` (approver). An approver is `{"mode": "user", "emp_code": "NX-2210"}` or `{"mode": "reporting_manager"}`.
+Rules checked on save: starts with a form, ends with exactly one payout, at most one advance and one upload step, field names unique across the flow, estimate and advance point at money fields, every named person exists, and advance / finance review / payout name a person (not "reporting manager").
+`claims.flow` is a frozen copy of that JSON taken when the claim is raised, and `claims.current_step` is the index of the step it is on (equal to the number of steps once paid). Both are empty for the three fixed templates. `approvals` rows for a flow claim use `phase = 'flow'` and `step` = the step's index; a row is created only when the claim reaches that step. Status while waiting: form `awaiting_input`, approval `pending_approval`, advance `awaiting_advance`, bills `awaiting_settlement`, finance review and payout `settlement_review`.
+Endpoints: `GET/POST /admin/templates`, `PUT /admin/templates/{id}` (admin), and `POST /submit_step` (the employee fills a later form). `create_claim`, `approve`, `reject`, `upload_receipt` and `submit_settlement` work on flow claims too.
+
 ## Who approves: the L1 to L4 rule
 
 The level comes from the amount (or is L4 for any international trip), using `approval_bands` in `config/setting.py`.

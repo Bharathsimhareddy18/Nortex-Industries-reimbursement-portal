@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Request · Nortex Travel Claims</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="appbar" id="appbar"></header>
+      <main class="content">
+      <div class="page" style="max-width:960px">
+        <header class="page-head">
+          <div>
+            <h1 id="page-title">New request</h1>
+            <p>Fill in the details and submit. You can follow it from the claim page afterwards.</p>
+          </div>
+          <a href="new-request.html" class="btn btn-ghost"><i class="ph ph-arrow-left" aria-hidden="true"></i>All request types</a>
+        </header>
+
+        <div class="alert" id="page-error" role="alert" hidden></div>
+
+        <form class="panel claim-card" id="claim-form" novalidate hidden>
+          <section style="display:grid;gap:24px">
+            <span class="section-title">What happens after you submit</span>
+            <div id="after-submit"></div>
+          </section>
+          <section style="display:grid;gap:24px">
+            <h2 id="form-title" style="font-size:18px"></h2>
+            <div class="alert" id="form-error" role="alert" hidden></div>
+            <div class="form-grid" id="fields"></div>
+            <div class="form-foot">
+              <button type="submit" class="btn btn-primary btn-lg" id="submit-button"><i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>Submit request</button>
+              <span class="muted" id="requesting"></span>
+            </div>
+          </section>
+        </form>
+
+        <section class="panel panel-pad" id="result" hidden></section>
+      </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/forms.js"></script>
+  <script src="js/request-form.js"></script>
+</body>
+</html>

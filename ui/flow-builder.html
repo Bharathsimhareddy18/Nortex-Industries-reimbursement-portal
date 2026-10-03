@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flow builder · Nortex Travel Claims</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/builder.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="appbar" id="appbar"></header>
+      <main class="content">
+      <div class="page" style="max-width:1240px">
+        <header class="page-head">
+          <div>
+            <h1 id="page-title">New flow</h1>
+            <p>Add blocks, put them in order, and choose who acts on each one. Employees get exactly this flow.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <a href="admin.html" class="btn btn-ghost">Cancel</a>
+            <button type="button" class="btn btn-primary" id="save"><i class="ph ph-floppy-disk" aria-hidden="true"></i>Save flow</button>
+          </div>
+        </header>
+
+        <div class="alert" id="error" role="alert" hidden></div>
+
+        <section class="panel panel-pad flow-top">
+          <div class="field">
+            <label for="flow-name">Flow name<span class="req">*</span></label>
+            <input class="input" id="flow-name" maxlength="100" placeholder="e.g. Business client visit">
+          </div>
+        </section>
+
+        <div class="builder">
+          <aside class="panel panel-pad palette">
+            <h2>Blocks</h2>
+            <p class="muted">Drag one into the flow, or click it.</p>
+            <div id="palette"></div>
+          </aside>
+          <section class="panel panel-pad canvas" id="canvas" aria-label="The flow"></section>
+          <aside class="panel panel-pad inspector" id="inspector" aria-label="Step settings"></aside>
+        </div>
+      </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/flow-builder.js"></script>
+</body>
+</html>

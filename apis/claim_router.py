@@ -6,7 +6,8 @@ from apis.dependencies import current_user
 from src.claims.claims import Claims
 from src.database.db import get_db
 from src.database.models import Employee
-from src.pydantic_models.claim import ApproverOut, ClaimDetailOut, ClaimStatusOut, CreateClaimIn, CreateClaimOut, MyClaimOut
+from src.flows.flows import Flows
+from src.pydantic_models.claim import ApproverOut, ClaimDetailOut, ClaimStatusOut, CreateClaimIn, CreateClaimOut, MyClaimOut, SubmitStepIn
 
 router = APIRouter(tags=["claims"])
 
@@ -47,3 +48,10 @@ def get_claim(claim_no: str, user: Employee = Depends(current_user), db: Session
     """Everything the claim page needs in one call: the form answers, every approval step with its decision, every receipt with its
     result, and the settlement totals once it is submitted. Only the owner or someone on the approval list may read it."""
     return Claims(db).get_detail(user, claim_no)
+
+
+@router.post("/submit_step", response_model=ClaimStatusOut)
+def submit_step(body: SubmitStepIn, user: Employee = Depends(current_user), db: Session = Depends(get_db)):
+    """Fill in a later form of a claim raised from an admin-built flow (the owner only, and only while the claim waits for that form)."""
+    claim = Flows(db).submit_step(user, body.claim_no, body.fields)
+    return ClaimStatusOut(claim_no=claim.claim_no, status=claim.status)

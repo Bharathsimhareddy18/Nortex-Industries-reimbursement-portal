@@ -14,10 +14,7 @@ const ACTIONS = {
 
 (async function () {
   me = await startPage("approvals");
-  if (!isApprover(me.role)) {
-    location.replace("dashboard.html"); // nothing to approve for this role
-    return;
-  }
+  // Every signed-in person can have a queue: an admin-built flow may ask anyone to approve.
   document.getElementById("refresh").addEventListener("click", loadQueue);
   loadQueue();
 })();
@@ -43,24 +40,24 @@ function rowHtml(item) {
   const advance = Number(item.advance_requested) > 0 ? `, advance ${formatMoney(item.advance_requested)}` : "";
   // Only a manager's approval can be rejected here; the Finance steps have the single action.
   const canReject = item.action === "approve";
-  const claimLink = `claims.html?claim=${encodeURIComponent(item.claim_no)}`;
+  const claimLink = `claim-decision.html?claim=${encodeURIComponent(item.claim_no)}`;
   return `
     <article class="note-row" data-claim="${escapeHtml(item.claim_no)}" data-action="${escapeHtml(item.action)}">
       <span class="avatar" aria-hidden="true">${escapeHtml(initials(item.claimant_name))}</span>
       <div class="note-body">
-        <p><strong>${escapeHtml(item.claimant_name)}</strong> · ${escapeHtml(item.template_name)}, <span class="mono">${formatMoney(item.estimated_amount)}</span>${advance}</p>
+        <p><strong>${escapeHtml(item.claimant_name)}</strong> · ${escapeHtml(item.template_name)}, ${Number(item.estimated_amount) > 0 ? `<span class="mono">${formatMoney(item.estimated_amount)}</span>` : ""}${advance}</p>
         <div class="note-meta">
           <span class="mono">${escapeHtml(item.claim_no)}</span>
-          <span>Level L${escapeHtml(item.level)}</span>
+          ${item.level ? `<span>Level L${escapeHtml(item.level)}</span>` : ""}
           <span>${statusBadge(item.status)}</span>
           <span>Raised ${formatDateTime(item.created_at)}</span>
         </div>
-        <p style="white-space:pre-wrap;margin:10px 0 0"><span class="muted">Why: </span>${escapeHtml(item.reason || "No reason was given.")}</p>
+        ${item.reason ? `<p style="white-space:pre-wrap;margin:10px 0 0"><span class="muted">Why: </span>${escapeHtml(item.reason)}</p>` : ""}
         <div class="alert" data-row-error role="alert" hidden></div>
         <div class="note-actions">
           <button type="button" class="btn btn-primary btn-sm" data-act>${action.label}${item.action === "release_advance" ? " " + formatMoney(item.advance_requested) : ""}</button>
           ${canReject ? '<button type="button" class="btn btn-danger btn-sm" data-reject>Reject</button>' : ""}
-          <a class="btn btn-ghost btn-sm" href="${claimLink}"><i class="ph ph-receipt" aria-hidden="true"></i>View claim and bills</a>
+          <a class="btn btn-ghost btn-sm" href="${claimLink}"><i class="ph ph-receipt" aria-hidden="true"></i>Review claim and bills</a>
         </div>
         ${canReject ? `<form class="reject-box" data-reject-form novalidate hidden>
           <div class="field">
